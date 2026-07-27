@@ -746,18 +746,19 @@
                     });
 
                     if (fetchedDashboards.length > 0) {
-                        dashboards = fetchedDashboards;
-                        // 선택된 대시보드가 삭제되었거나 없을 경우 첫 번째 대시보드로 지정
-                        if (!dashboards.find(d => d.id === activeDashId)) {
-                            activeDashId = dashboards[0].id;
-                        }
-                    } else {
-                        dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
-                        saveDashboardsToStorage();
-                    }
-
-                    renderDashboardList();
-                    loadActiveDashboard();
+                dashboards = fetchedDashboards;
+                // 선택된 대시보드가 삭제되었거나 없을 경우 첫 번째 대시보드로 지정
+                if (!dashboards.find(d => d.id === activeDashId)) {
+                    activeDashId = dashboards[0].id;
+                }
+            } else {
+                dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
+                // [버그 수정] 접속 초기 지연으로 빈 데이터가 반환될 때 
+                // Firebase DB 전체가 초기화되는 것을 막기 위해 강제 저장 로직을 제거합니다.
+                // saveDashboardsToStorage(); 
+            }
+            renderDashboardList();
+            loadActiveDashboard();
                 }, (error) => {
                     console.error("Firebase Firestore 리스너 에러:", error);
                     showToast("Firebase 데이터 수신 중 오류가 발생했습니다.");
