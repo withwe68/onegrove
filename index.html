@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>2026년 종합방재실 고장이력 관리 대시보드</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Pretendard Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Print & PDF Specific Styles for Clean A4 Summary Printing */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            header, .no-print, button, select, input, .group, #toast, #add-modal, #dash-modal, #pdf-modal { 
+                display: none !important; 
+            }
+            body { 
+                background: #ffffff !important; 
+                color: #000000 !important; 
+                min-height: auto !important; 
+                font-size: 9.5pt !important; 
+            }
+            main { 
+                max-width: 100% !important; 
+                padding: 0 !important; 
+                margin: 0 !important; 
+            }
+            .bg-white, .bg-slate-900, .bg-slate-800 { 
+                background: #ffffff !important; 
+                color: #000000 !important; 
+                border: 1px solid #cbd5e1 !important; 
+                box-shadow: none !important; 
+            }
+            .text-white, .text-slate-200, .text-slate-300, .text-slate-400 { 
+                color: #0f172a !important; 
+            }
+            .print-header { 
+                display: block !important; 
+                border-bottom: 2px solid #0f172a; 
+                padding-bottom: 12px; 
+                margin-bottom: 16px; 
+            }
+            .print-break-avoid {
+                page-break-inside: avoid;
+            }
+            .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl { 
+                box-shadow: none !important; 
+            }
+            table { 
+                font-size: 8.5pt !important; 
+                width: 100% !important; 
+                border-collapse: collapse !important; 
+            }
+            th, td { 
+                border: 1px solid #94a3b8 !important; 
+                padding: 5px 6px !important; 
+            }
+            th { 
+                background-color: #f1f5f9 !important; 
+                color: #0f172a !important; 
+                font-weight: bold !important;
+            }
+            canvas { 
+                max-height: 170px !important; 
+            }
+            .grid { 
+                display: flex !important; 
+                flex-wrap: wrap !important; 
+                gap: 10px !important; 
+            }
+            .grid > * { 
+                flex: 1 1 200px !important; 
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Printable Official Summary Header (Hidden on screen, Visible on print) -->
+    <div class="hidden print-header p-2">
+        <div class="flex justify-between items-start">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 bg-blue-100 text-blue-800 font-bold text-xs rounded border border-blue-300">소방방재 공식보고서</span>
+                    <span class="text-xs text-slate-500" id="print-doc-id">문서번호: FIR-2026-07</span>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900 mt-1" id="print-doc-title">2026년 종합방재실 고장이력 관리용 대시보드</h1>
+                <p class="text-xs text-slate-600 mt-1" id="print-doc-subtitle">결로, 누수 및 외부 습기 관련 비화재보/고장 이력 모니터링</p>
+            </div>
+            
+            <!-- Approval Box for Print -->
+            <div class="flex border border-slate-400 text-center text-[10px] bg-white">
+                <div class="w-8 bg-slate-100 border-r border-slate-400 flex items-center justify-center font-bold text-slate-700 py-1">결<br>재</div>
+                <div class="w-16 border-r border-slate-400">
+                    <div class="border-b border-slate-300 py-0.5 bg-slate-50 font-semibold">담당</div>
+                    <div class="h-10 flex items-end justify-center pb-1 text-slate-400">인</div>
+                </div>
+                <div class="w-16 border-r border-slate-400">
+                    <div class="border-b border-slate-300 py-0.5 bg-slate-50 font-semibold">검토</div>
+                    <div class="h-10 flex items-end justify-center pb-1 text-slate-400">인</div>
+                </div>
+                <div class="w-16">
+                    <div class="border-b border-slate-300 py-0.5 bg-slate-50 font-semibold">승인</div>
+                    <div class="h-10 flex items-end justify-center pb-1 text-slate-400">인</div>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-between items-center text-xs text-slate-600 mt-3 pt-2 border-t border-slate-200">
+            <p><strong>작성부서:</strong> <span id="print-doc-dept">종합방재실/소방파트</span></p>
+            <p><strong>출력일시:</strong> <span id="print-doc-date">2026.07.23</span></p>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600 p-2.5 rounded-xl shadow-md text-white relative">
+                        <i class="fa-solid fa-cloud-showers-water text-xl"></i>
+                        <!-- Firebase Live Indicator -->
+                        <span id="firebase-indicator" class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-slate-900 hidden animate-pulse" title="Firebase 클라우드 실시간 연동 중"></span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg font-bold tracking-tight" id="header-dash-title">2026년 집중호우 관제 대시보드</h1>
+                            <span class="text-[11px] bg-blue-900 text-blue-200 px-2 py-0.5 rounded-full font-medium" id="header-dash-period">2026.07.01 ~ 2026.07.31</span>
+                        </div>
+                        <p class="text-xs text-slate-400" id="header-dash-desc">결로, 누수 및 외부 습기 관련 비화재보/고장 이력 모니터링</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard selector and management bar -->
+            <div class="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
+                <!-- DASHBOARD SELECTOR -->
+                <div class="relative inline-block text-left">
+                    <select id="dash-selector" onchange="switchDashboard(this.value)" class="bg-slate-800 text-slate-100 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <!-- JS populated -->
+                    </select>
+                </div>
+
+                <button onclick="openNewDashModal()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5 text-xs" title="새 관제 대시보드 만들기">
+                    <i class="fa-solid fa-folder-plus"></i> 신규 대시보드
+                </button>
+
+                <!-- PDF EXPORT BUTTON WITH CUSTOM NAME MODAL -->
+                <button onclick="openPdfModal()" class="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs ring-2 ring-amber-400/30" title="PDF 파일 이름 지정 및 저장">
+                    <i class="fa-solid fa-file-pdf text-white"></i> PDF 저장 / 인쇄
+                </button>
+
+                <!-- EXPORT DROPDOWN -->
+                <div class="relative group">
+                    <button class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs">
+                        <i class="fa-solid fa-file-export"></i> 내보내기 <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </button>
+                    <div class="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 hidden group-hover:block group-focus-within:block z-50 text-xs text-slate-700">
+                        <button onclick="exportDataCSV()" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-file-csv text-emerald-600"></i> CSV (스프레드시트)
+                        </button>
+                        <button onclick="exportDataTXT()" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-file-lines text-blue-600"></i> TXT (텍스트 보고서)
+                        </button>
+                        <button onclick="exportDataDOC()" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-file-word text-indigo-600"></i> DOC (MS 워드 문서)
+                        </button>
+                        <button onclick="exportDataJSON()" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100">
+                            <i class="fa-solid fa-code text-amber-600"></i> JSON (전체 백업)
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="openAddModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-plus"></i> 이력 추가
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-slate-950 px-4 sm:px-8 border-t border-slate-800">
+            <div class="max-w-7xl mx-auto flex items-center gap-4 text-xs font-semibold">
+                <button onclick="openTab('dashboard')" id="tab-btn-dashboard" class="py-2.5 px-3 border-b-2 border-blue-500 text-blue-400 flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-chart-pie"></i> 모니터링 대시보드
+                </button>
+                <button onclick="openTab('plan')" id="tab-btn-plan" class="py-2.5 px-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-shield-halved"></i> 재발방지 대책보고
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+        <!-- TAB 1: DASHBOARD -->
+        <div id="tab-dashboard" class="space-y-6">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print-break-avoid">
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">총 발생 건수</p>
+                        <h3 class="text-3xl font-extrabold text-slate-800 mt-1" id="kpi-total">0건</h3>
+                        <span class="inline-block mt-2 text-xs text-slate-500">우천 및 습기 집중기간 기준</span>
+                    </div>
+                    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 text-xl">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-amber-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-amber-600">비화재보 (습기/결로)</p>
+                        <h3 class="text-3xl font-extrabold text-amber-600 mt-1" id="kpi-nonfire">0건</h3>
+                        <span class="inline-block mt-2 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md" id="kpi-nonfire-ratio">전체 중 0%</span>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 text-xl">
+                        <i class="fa-solid fa-bell-slash"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-rose-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-rose-600">고장 탈거</p>
+                        <h3 class="text-3xl font-extrabold text-rose-600 mt-1" id="kpi-fault">0건</h3>
+                        <span class="inline-block mt-2 text-xs text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">누수/침수 및 방풍실</span>
+                    </div>
+                    <div class="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center text-rose-600 text-xl">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-indigo-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">최다 발생 구역</p>
+                        <h3 class="text-2xl font-extrabold text-indigo-700 mt-1" id="kpi-hotspot">-</h3>
+                        <span class="inline-block mt-2 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">지하1층/1층 주 집중</span>
+                    </div>
+                    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 text-xl">
+                        <i class="fa-solid fa-building-circle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 print-break-avoid">
+                <!-- Bar Chart -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 lg:col-span-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-chart-bar text-blue-600"></i> 동별·유형별 발생 현황
+                        </h2>
+                        <span class="text-xs text-slate-400">단위: 건</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="buildingChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Pie Chart -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-indigo-600"></i> 세부 원인 분류
+                        </h2>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="causeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-slate-100">
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-list-ul text-blue-600"></i> 상세 감시/고장 이력 목록
+                        </h2>
+                        <p class="text-xs text-slate-500">필터 및 검색을 통해 현황 파악 및 조치 이력 관리</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <div class="relative flex-1 sm:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="search-input" oninput="renderTable()" placeholder="장소, 내역, Address 검색..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <select id="filter-building" onchange="renderTable()" class="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="ALL">전체 동</option>
+                            <option value="A">A동</option>
+                            <option value="B">B동</option>
+                            <option value="C">C동</option>
+                            <option value="D">D동</option>
+                        </select>
+                        <select id="filter-type" onchange="renderTable()" class="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="ALL">전체 구분</option>
+                            <option value="비화재보">비화재보</option>
+                            <option value="고장">고장</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-xs text-left text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                            <tr>
+                                <th class="px-4 py-3">일자</th>
+                                <th class="px-4 py-3 min-w-[90px] whitespace-nowrap">구분</th>
+                                <th class="px-4 py-3">동/층</th>
+                                <th class="px-4 py-3 hidden md:table-cell">Address</th>
+                                <th class="px-4 py-3 hidden lg:table-cell">장치 종류</th>
+                                <th class="px-4 py-3">상세 내역</th>
+                                <th class="px-4 py-3 hidden md:table-cell">추정 원인</th>
+                                <th class="px-4 py-3 hidden sm:table-cell">담당자</th>
+                                <th class="px-4 py-3">현재 상태 / 비고</th>
+                                <th class="px-4 py-3 text-center no-print">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-100">
+                            <!-- JS Dynamically rendered rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: RECURRENCE PREVENTION PLAN -->
+        <div id="tab-plan" class="hidden space-y-6">
+            <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-2 text-emerald-400 font-semibold text-xs mb-1 uppercase tracking-wider">
+                        <i class="fa-solid fa-shield-check"></i> 종합 방재 대책 보고서
+                    </div>
+                    <h2 class="text-xl font-bold">우천·결로·누수 감지기 비화재보 및 고장 재발방지 대책</h2>
+                    <p class="text-xs text-slate-400 mt-1">최근 집중호우 및 습기 증가에 따른 장비 안정화 및 수신기 관리 방안</p>
+                </div>
+                <button onclick="openPdfModal()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-lg text-xs shadow-md flex items-center gap-2 transition">
+                    <i class="fa-solid fa-file-pdf text-amber-300"></i> PDF 보고서 출력 / 저장
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Short term -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm">1</div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm">단기 조치 사항 (즉시 시행)</h3>
+                            <p class="text-[11px] text-slate-500">취약 구간 즉시 보호 및 임시 유도 조치</p>
+                        </div>
+                    </div>
+                    <ul class="space-y-3 text-xs text-slate-700">
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-umbrella text-blue-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">취약구간 아크릴 방수 커버/유도판 설치</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">주차장 램프 및 스틸그레이팅 하부 연기감지기에 낙수 차단용 아크릴 캡 설치</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-door-open text-indigo-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">방풍실 감지기 실내측 이설 (30~50cm)</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">외부 출입문 직풍 및 습기 직접 노출 위치에서 실내 구역으로 위치 조정</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-rotate-left text-emerald-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">수신기 차단해제 매뉴얼화</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">우천 종료 후 즉시 전압/저항 측정 및 수신기 입력 차단 해제 정기점검</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Long term -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">2</div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm">중장기 개선 방안 (구조 개선)</h3>
+                            <p class="text-[11px] text-slate-500">설비 교체 및 상습 누수 부위 방수 공사</p>
+                        </div>
+                    </div>
+                    <ul class="space-y-3 text-xs text-slate-700">
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-faucet-drip text-rose-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">방수형(IP65) / 아날로그 감지기 교체</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">냉장창고 및 상습 습기 구역에 방수형 감지기 또는 결로 보정 아날로그 센서 도입</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-wind text-sky-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">에어커튼 및 산업용 제습기 설치</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">냉장창고 출입구 온습도차 감소용 에어커튼 가동 및 지하층 제습 강화</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-fill-drip text-amber-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">천장 균열 주입식 인젝션 방수</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">주차장 램프 및 지하3층 슬래브 누수 지점 근본적 균열 보수 실시</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Checklist Table -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-emerald-600"></i> 우천 집중기간 소방시설 예방점검 체크리스트
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-600 border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                                <th class="p-2.5">구분</th>
+                                <th class="p-2.5">점검 항목</th>
+                                <th class="p-2.5">점검 기준</th>
+                                <th class="p-2.5">주기</th>
+                                <th class="p-2.5 text-center">상태</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <td class="p-2.5 font-bold text-slate-800">방풍실/출입구</td>
+                                <td class="p-2.5">감지기 표면 수분 축적 여부</td>
+                                <td class="p-2.5">외관 건조 상태 유지 및 아크릴 커버 유무</td>
+                                <td class="p-2.5">우천시 매일</td>
+                                <td class="p-2.5 text-center"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded font-bold">양호</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2.5 font-bold text-slate-800">주차장 램프</td>
+                                <td class="p-2.5">천장 누수 발생 및 감지기 유입 여부</td>
+                                <td class="p-2.5">누수 부위 감지기 이설 또는 드레인 유도</td>
+                                <td class="p-2.5">주 1회</td>
+                                <td class="p-2.5 text-center"><span class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-bold">점검필요</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2.5 font-bold text-slate-800">냉장창고</td>
+                                <td class="p-2.5">이슬점 형성 및 센서 오동작 여부</td>
+                                <td class="p-2.5">결로 방지용 방수형 교체 및 차단 모니터링</td>
+                                <td class="p-2.5">수시</td>
+                                <td class="p-2.5 text-center"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded font-bold">양호</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- CUSTOM PDF EXPORT MODAL -->
+    <div id="pdf-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-file-pdf text-amber-400"></i> PDF 저장 파일명 설정
+                </h3>
+                <button onclick="closePdfModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">저장할 PDF 파일명</label>
+                    <input type="text" id="pdf-filename-input" placeholder="파일명 입력" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium">
+                    <p class="text-[11px] text-slate-500 mt-1.5"><i class="fa-solid fa-circle-info text-blue-500 mr-1"></i>인쇄 창에서 'PDF로 저장' 선택 시 입력한 이름으로 파일이 생성됩니다.</p>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-[11px] text-slate-600">
+                    <p class="font-bold text-slate-800">💡 빠른 파일명 조합 선택:</p>
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        <button type="button" onclick="setPdfPresetName(1)" class="px-2 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded text-slate-700 font-medium">[기본] 관제 대시보드</button>
+                        <button type="button" onclick="setPdfPresetName(2)" class="px-2 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded text-slate-700 font-medium">[일자포함] 관제 보고서</button>
+                        <button type="button" onclick="setPdfPresetName(3)" class="px-2 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded text-slate-700 font-medium">[부서포함] 소방방재보고</button>
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closePdfModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium">취소</button>
+                    <button type="button" onclick="executePdfPrint()" class="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-lg font-bold shadow flex items-center gap-1.5">
+                        <i class="fa-solid fa-print"></i> PDF 저장 및 인쇄
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD / EDIT MODAL -->
+    <div id="add-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200 max-h-[90vh] overflow-y-auto">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+                <h3 class="font-bold text-base flex items-center gap-2" id="modal-title">
+                    <i class="fa-solid fa-plus-circle text-emerald-400"></i> 신규 고장/감시 내역 등록
+                </h3>
+                <button onclick="closeAddModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="bg-slate-50 px-6 py-2.5 border-b border-slate-200 flex items-center gap-2 overflow-x-auto text-xs">
+                <span class="font-semibold text-slate-500 whitespace-nowrap"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>빠른 템플릿:</span>
+                <button type="button" onclick="applyPreset('방풍실')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🚪 방풍실 습기</button>
+                <button type="button" onclick="applyPreset('램프')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🚗 램프 누수</button>
+                <button type="button" onclick="applyPreset('결로')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">❄️ 냉장창고 결로</button>
+                <button type="button" onclick="applyPreset('그레이팅')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🌧️ 스틸그레이팅 노출</button>
+            </div>
+
+            <form id="add-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-3.5 text-xs">
+                <input type="hidden" id="form-edit-id" value="">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">발생 일자</label>
+                        <input type="text" id="form-date" required placeholder="예: 7/22" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">구분</label>
+                        <select id="form-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="고장">고장 (탈거/단선)</option>
+                            <option value="비화재보">비화재보 (오작동)</option>
+                            <option value="감시">감시 (수신기 이상)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">동/층 (예: C/B1F)</label>
+                        <input type="text" id="form-location" required placeholder="예: C/B1F" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Address 번호</label>
+                        <input type="text" id="form-address" required placeholder="예: 0436-1215" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">장치 종류</label>
+                        <select id="form-detector-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="방화셔터 연기감지기">방화셔터 연기감지기</option>
+                            <option value="방화셔터 열감지기">방화셔터 열감지기</option>
+                            <option value="일반 연기감지기">일반 연기감지기</option>
+                            <option value="일반 열감지기">일반 열감지기</option>
+                            <option value="수동조작함">수동조작함</option>
+                            <option value="발신기">발신기</option>
+                            <option value="기 타">기 타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">담당자/조치자</label>
+                        <input type="text" id="form-assignee" placeholder="예: 심준서" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">세부 내역</label>
+                    <textarea id="form-desc" rows="2" required placeholder="위치, 특이사항 및 상세 원인 입력..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">추정 원인 분류</label>
+                        <select id="form-cause" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="외부노출/방풍실">외부노출/방풍실</option>
+                            <option value="누수/침수">누수/침수</option>
+                            <option value="결로현상">결로현상</option>
+                            <option value="감지기고장">감지기고장</option>
+                            <option value="오동작">오동작</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">현재 상태 / 비고</label>
+                        <select id="form-status-select" onchange="syncStatusInput()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-1">
+                            <option value="감지기 탈거">감지기 탈거</option>
+                            <option value="입력차단">입력차단</option>
+                            <option value="점검중">점검중</option>
+                            <option value="점검완료">점검완료</option>
+                            <option value="창가측 우천영향">창가측 우천영향</option>
+                            <option value="custom">직접 입력...</option>
+                        </select>
+                        <input type="text" id="form-status" placeholder="상태 직접 입력" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hidden">
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium">취소</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium shadow flex items-center gap-1">
+                        <i class="fa-solid fa-check"></i> <span id="submit-btn-text">저장하기</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NEW DASHBOARD MODAL -->
+    <div id="dash-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-folder-plus text-blue-400"></i> 신규 관제 대시보드 만들기
+                </h3>
+                <button onclick="closeNewDashModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="dash-form" onsubmit="handleNewDashSubmit(event)" class="p-6 space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">관제 대시보드 제목</label>
+                    <input type="text" id="dash-title" required placeholder="예: 2026년 8월 태풍 및 폭우 관제" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">관제 기간</label>
+                        <input type="text" id="dash-period" placeholder="2026.08.01 ~ 08.31" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">담당 부서</label>
+                        <input type="text" id="dash-dept" value="종합방재실/소방파트" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">대상 구역</label>
+                    <input type="text" id="dash-target" value="전체 동 (A/B/C/D동)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">관제 설명 / 개요</label>
+                    <textarea id="dash-desc" rows="2" placeholder="우천, 습기, 결로 관련 소방 감지기 장애 모니터링" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeNewDashModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium">취소</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium shadow flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> 대시보드 생성
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none z-50 text-xs">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toast-msg">처리 완료되었습니다.</span>
+    </div>
+
+    <script>
+        /* =========================================================================
+           [파이어베이스(Firebase) 데이터베이스 설정 영역]
+        ========================================================================= */
+        const firebaseConfig = {
+            apiKey: "AIzaSyAorRIMbl0xwHp_2IjlBQDGKUQtLHH1Ph0",
+            authDomain: "as-manager-e59a5.firebaseapp.com",
+            projectId: "as-manager-e59a5",
+            storageBucket: "as-manager-e59a5.firebasestorage.app",
+            messagingSenderId: "352842334881",
+            appId: "1:352842334881:web:5edf5caa5f91e6e898e6e0",
+            measurementId: "G-X7VWX4SXBJ"
+        };
+
+        // Firebase 연동 상태 변수
+        let useFirebase = false;
+        let db = null;
+        let isFirstLoad = true;
+
+        // 최신 관제 데이터 세트 (초기 기본값)
+        const LATEST_DASHBOARD_DATA = {
+            "id": "dash-1784702463065",
+            "title": "2026년 원그로브 시설관리 대시보드",
+            "period": "2026.07.01 ~ 2026.07.31",
+            "dept": "종합방재실/소방파트",
+            "target": "A/B/C/D동 전체",
+            "desc": "결로, 누수 및 외부 습기 관련 비화재보/고장 이력 모니터링",
+            "updatedAt": "2026. 7. 22. 오후 5:29:24",
+            "logs": [
+                { "id": 1784706855687, "date": "7/20", "type": "비화재보", "location": "D/4F", "building": "D", "address": "0301-2205", "detectorType": "아날로그 감지기", "assignee": "심준서", "count": 1, "desc": "MRI실 헬륨가스 압력조절 작업중 가스감지기 동작", "cause": "기타", "status": "점검완료" },
+                { "id": 1784702751986, "date": "7/22", "type": "고장", "location": "B/B1F", "building": "B", "address": "0414-3011", "detectorType": "아날로그 감지기", "assignee": "김학제", "count": 1, "desc": "브릭샌드 매장내 연기감지기 단선- 영업중 탈거 곤란함", "cause": "결로현상", "status": "창가측 우천영향" },
+                { "id": 1784685910697, "date": "7/22", "type": "고장", "location": "D/B1F", "building": "D", "address": "0436-1033", "detectorType": "아날로그 감지기", "assignee": "박현인", "count": 1, "desc": "D동 지하1층 스타벅스 주방내 정온식감지기 결로현상", "cause": "결로현상", "status": "감지기 탈거" },
+                { "id": 1784685735936, "date": "7/22", "type": "비화재보", "location": "B/B1F", "building": "B", "address": "0414-2097", "detectorType": "방화셔터 연기감지기", "assignee": "박현인", "count": 1, "desc": "디라이프스타일키친 방화셔터 연기감지기 비화재보", "cause": "결로현상", "status": "감지기 탈거" },
+                { "id": 1784620545260, "date": "7/21", "type": "고장", "location": "B/B1F", "building": "B", "address": "0414-1037", "detectorType": "방화셔터 연기감지기", "assignee": "박상현", "count": 1, "desc": "방풍실내 높은 습도영향", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 1, "date": "7/8", "type": "고장", "location": "D/B3F", "building": "D", "address": "0433-3031", "detectorType": "일반 연기감지기", "assignee": "이혁기", "count": 1, "desc": "A1~A2기둥 사이 누수로 연기 감지기 고장 탈거", "cause": "누수/침수", "status": "입력차단" },
+                { "id": 2, "date": "7/10", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0436-2070", "detectorType": "일반 연기감지기", "assignee": "동성", "count": 1, "desc": "C동~D동 보행통로 중간 스틸 그레이팅 상단 위 70번 감지기 비화재보 고장", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 3, "date": "7/15", "type": "비화재보", "location": "B/B2F", "building": "B", "address": "0403-1045", "detectorType": "아날로그 감지기", "assignee": "심준서", "count": 1, "desc": "B동 지하2층 분리수거장 입구 앞 트레이더스 매장 냉장창고 결로현상", "cause": "결로현상", "status": "입력차단" },
+                { "id": 4, "date": "7/17", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1213", "detectorType": "방화셔터 연기감지기", "assignee": "김근철", "count": 1, "desc": "C동 지하1층 ABC마트 방화셔터연기 감지기 고장 탈거\n07/20 재부착 차단해제", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 5, "date": "7/21", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1212", "detectorType": "방화셔터 연기감지기", "assignee": "김근철", "count": 1, "desc": "C동 지하1층 ABC마트옆 방풍실내 연기감지기 고장 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 6, "date": "7/21", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3023", "detectorType": "아날로그 감지기", "assignee": "이규현", "count": 1, "desc": "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 7, "date": "7/21", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3018", "detectorType": "아날로그 감지기", "assignee": "이규현", "count": 1, "desc": "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 8, "date": "7/21", "type": "고장", "location": "A/B1F", "building": "A", "address": "0414-1043", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기 대리", "count": 1, "desc": "A동 지하1층 방풍실 방화셔터 연기감지기 고장 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" }
+            ]
+        };
+
+        let dashboards = [];
+        let activeDashId = localStorage.getItem('fire_active_dash_v2') || LATEST_DASHBOARD_DATA.id;
+        let detectorLogs = [];
+        let buildingChartInstance = null;
+        let causeChartInstance = null;
+
+        window.onload = function() {
+            initCharts();
+            
+            if (firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "") {
+                initFirebase();
+            } else {
+                loadDashboardsFromStorage();
+                renderDashboardList();
+                loadActiveDashboard();
+            }
+        };
+
+        function initFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                useFirebase = true;
+
+                const indicator = document.getElementById('firebase-indicator');
+                if (indicator) indicator.classList.remove('hidden');
+
+                showToast("🔥 Firebase 클라우드 실시간 연동 모드로 실행되었습니다.");
+
+                db.collection("fire_dashboards").onSnapshot((snapshot) => {
+                    const fetchedDashboards = [];
+                    snapshot.forEach((doc) => {
+                        fetchedDashboards.push(doc.data());
+                    });
+
+                    if (fetchedDashboards.length > 0) {
+                        dashboards = fetchedDashboards;
+                        // 선택된 대시보드가 삭제되었거나 없을 경우 첫 번째 대시보드로 지정
+                        if (!dashboards.find(d => d.id === activeDashId)) {
+                            activeDashId = dashboards[0].id;
+                        }
+                    } else {
+                        dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
+                        saveDashboardsToStorage();
+                    }
+
+                    renderDashboardList();
+                    loadActiveDashboard();
+                }, (error) => {
+                    console.error("Firebase Firestore 리스너 에러:", error);
+                    showToast("Firebase 데이터 수신 중 오류가 발생했습니다.");
+                });
+            } catch (err) {
+                console.error("Firebase 초기화 에러:", err);
+                useFirebase = false;
+                loadDashboardsFromStorage();
+                renderDashboardList();
+                loadActiveDashboard();
+            }
+        }
+
+        function loadDashboardsFromStorage() {
+            try {
+                const saved = localStorage.getItem('fire_dashboards_v2');
+                if (saved) {
+                    dashboards = JSON.parse(saved);
+                    // 저장소에 저장된 대시보드 중 활성 ID가 없으면 첫 번째 항목으로 초기화
+                    if (!dashboards.find(d => d.id === activeDashId)) {
+                        activeDashId = dashboards[0].id;
+                    }
+                } else {
+                    // 최초 실행 시에만 기본 데이터 셋팅
+                    dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
+                }
+            } catch(e) { 
+                console.error(e);
+                dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
+            }
+            saveDashboardsToStorage();
+        }
+
+        function saveDashboardsToStorage() {
+            try {
+                localStorage.setItem('fire_dashboards_v2', JSON.stringify(dashboards));
+                localStorage.setItem('fire_active_dash_v2', activeDashId);
+            } catch(e) { console.error(e); }
+
+            if (useFirebase && db) {
+                const cur = getActiveDashboard();
+                if (cur) {
+                    db.collection("fire_dashboards").doc(cur.id).set(cur)
+                    .then(() => console.log("Firebase 문서 저장 성공:", cur.id))
+                    .catch(err => console.error("Firebase 저장 실패:", err));
+                }
+            }
+        }
+
+        function getActiveDashboard() {
+            return dashboards.find(d => d.id === activeDashId) || dashboards[0];
+        }
+
+        function loadActiveDashboard() {
+            const cur = getActiveDashboard();
+            if (!cur) return;
+            activeDashId = cur.id;
+            detectorLogs = cur.logs || [];
+
+            document.getElementById('header-dash-title').innerText = cur.title;
+            document.getElementById('header-dash-period').innerText = cur.period;
+            document.getElementById('header-dash-desc').innerText = cur.desc;
+
+            const selector = document.getElementById('dash-selector');
+            if (selector) selector.value = cur.id;
+
+            renderTable();
+            updateKPIs();
+            updateCharts();
+        }
+
+        function saveCurrentDashboardState() {
+            const cur = getActiveDashboard();
+            if (cur) {
+                cur.logs = detectorLogs;
+                cur.updatedAt = new Date().toLocaleString();
+                saveDashboardsToStorage();
+            }
+        }
+
+        function renderDashboardList() {
+            const selectEl = document.getElementById('dash-selector');
+            if (!selectEl) return;
+            selectEl.innerHTML = dashboards.map(d => 
+                `<option value="${d.id}">${d.title} (${d.logs ? d.logs.length : 0}건)</option>`
+            ).join('');
+        }
+
+        function switchDashboard(dashId) {
+            saveCurrentDashboardState();
+            activeDashId = dashId;
+            saveDashboardsToStorage();
+            loadActiveDashboard();
+            showToast("관제 대시보드가 전환되었습니다.");
+        }
+
+        function openPdfModal() {
+            saveCurrentDashboardState();
+            const cur = getActiveDashboard();
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const defaultFilename = `${cur.title.replace(/\s+/g, '_')}_보고서_${dateStr}`;
+            
+            const pdfInput = document.getElementById('pdf-filename-input');
+            if (pdfInput) {
+                pdfInput.value = defaultFilename;
+            }
+            
+            document.getElementById('pdf-modal').classList.remove('hidden');
+        }
+
+        function closePdfModal() {
+            document.getElementById('pdf-modal').classList.add('hidden');
+        }
+
+        function setPdfPresetName(type) {
+            const cur = getActiveDashboard();
+            const pdfInput = document.getElementById('pdf-filename-input');
+            const today = new Date().toISOString().slice(0, 10);
+
+            if (type === 1) {
+                pdfInput.value = cur.title.replace(/\s+/g, '_');
+            } else if (type === 2) {
+                pdfInput.value = `${cur.title.replace(/\s+/g, '_')}_${today}`;
+            } else if (type === 3) {
+                pdfInput.value = `[${cur.dept.replace(/\//g, '_')}]_${cur.title.replace(/\s+/g, '_')}`;
+            }
+        }
+
+        function executePdfPrint() {
+            const pdfInput = document.getElementById('pdf-filename-input');
+            let customName = pdfInput ? pdfInput.value.trim() : '';
+
+            if (!customName) {
+                customName = '집중호우_관제_대시보드_보고서';
+            }
+
+            closePdfModal();
+
+            const cur = getActiveDashboard();
+            const printTitleEl = document.getElementById('print-doc-title');
+            if (printTitleEl) printTitleEl.innerText = cur.title;
+            
+            const printSubEl = document.getElementById('print-doc-subtitle');
+            if (printSubEl) printSubEl.innerText = `관제 기간: ${cur.period} | 대상 구역: ${cur.target || '전체'} | ${cur.desc || ''}`;
+            
+            const printDeptEl = document.getElementById('print-doc-dept');
+            if (printDeptEl) printDeptEl.innerText = cur.dept || '종합방재실/소방파트';
+
+            const printDateEl = document.getElementById('print-doc-date');
+            if (printDateEl) printDateEl.innerText = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+            const originalTitle = document.title;
+            document.title = customName;
+
+            showToast(`PDF 파일명 '${customName}.pdf' 설정으로 저장창을 엽니다.`);
+
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.title = originalTitle;
+                }, 1000);
+            }, 300);
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            if (!tbody) return;
+
+            const searchInput = document.getElementById('search-input');
+            const search = searchInput ? searchInput.value.toLowerCase() : '';
+            const filterBuilding = document.getElementById('filter-building').value;
+            const filterType = document.getElementById('filter-type').value;
+
+            const parseLogDate = (item) => {
+                if (item.date) {
+                    const parts = item.date.split('/');
+                    if (parts.length === 2) {
+                        const m = parseInt(parts[0], 10);
+                        const d = parseInt(parts[1], 10);
+                        if (!isNaN(m) && !isNaN(d)) return m * 100 + d;
+                    }
+                }
+                return typeof item.id === 'number' ? item.id : 0;
+            };
+
+            const sortedLogs = [...detectorLogs].sort((a, b) => {
+                const scoreA = parseLogDate(a);
+                const scoreB = parseLogDate(b);
+                if (scoreA !== scoreB) return scoreB - scoreA;
+                return (b.id || 0) - (a.id || 0);
+            });
+
+            const filtered = sortedLogs.filter(item => {
+                const matchSearch = (item.desc || '').toLowerCase().includes(search) || 
+                                    (item.location || '').toLowerCase().includes(search) || 
+                                    (item.address || '').toLowerCase().includes(search) ||
+                                    (item.assignee && item.assignee.toLowerCase().includes(search)) ||
+                                    (item.status || '').toLowerCase().includes(search);
+                const matchBuilding = (filterBuilding === 'ALL') || (item.building === filterBuilding);
+                const matchType = (filterType === 'ALL') || (item.type === filterType);
+                return matchSearch && matchBuilding && matchType;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400">조회된 관제 내역이 없습니다.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => {
+                let typeBadge = item.type === '비화재보' 
+                    ? `<span class="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700 border border-amber-300 whitespace-nowrap">비화재보</span>`
+                    : item.type === '감시'
+                    ? `<span class="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-300 whitespace-nowrap">감시</span>`
+                    : `<span class="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-300 whitespace-nowrap">고장</span>`;
+
+                let causeBadge = '';
+                if(item.cause === '누수/침수') causeBadge = `<span class="text-rose-600 font-medium"><i class="fa-solid fa-droplet mr-1"></i>누수/침수</span>`;
+                else if(item.cause === '결로현상') causeBadge = `<span class="text-amber-600 font-medium"><i class="fa-solid fa-temperature-low mr-1"></i>결로</span>`;
+                else if(item.cause === '외부노출/방풍실') causeBadge = `<span class="text-sky-600 font-medium"><i class="fa-solid fa-wind mr-1"></i>외부/방풍실</span>`;
+                else if(item.cause === '감지기고장') causeBadge = `<span class="text-purple-600 font-medium"><i class="fa-solid fa-triangle-exclamation mr-1"></i>감지기고장</span>`;
+                else causeBadge = `<span class="text-slate-600 font-medium"><i class="fa-solid fa-circle-info mr-1"></i>기타</span>`;
+
+                let statusColor = 'bg-slate-100 text-slate-700';
+                if(item.status.includes('차단해제') || item.status.includes('완료')) {
+                    statusColor = 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+                } else if(item.status.includes('차단')) {
+                    statusColor = 'bg-amber-100 text-amber-800 border border-amber-300';
+                } else if(item.status.includes('탈거')) {
+                    statusColor = 'bg-rose-100 text-rose-800 border border-rose-300';
+                } else if(item.status.includes('우천영향')) {
+                    statusColor = 'bg-sky-100 text-sky-800 border border-sky-300';
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">${item.date}</td>
+                        <td class="px-4 py-3 whitespace-nowrap min-w-[90px]">${typeBadge}</td>
+                        <td class="px-4 py-3 font-bold text-slate-700 whitespace-nowrap">${item.location}</td>
+                        <td class="px-4 py-3 font-mono text-slate-600 whitespace-nowrap hidden md:table-cell">${item.address}</td>
+                        <td class="px-4 py-3 text-slate-600 whitespace-nowrap hidden lg:table-cell">${item.detectorType || '연기감지기'}</td>
+                        <td class="px-4 py-3 max-w-xs leading-relaxed text-slate-800 font-medium whitespace-pre-line">${item.desc}</td>
+                        <td class="px-4 py-3 whitespace-nowrap hidden md:table-cell">${causeBadge}</td>
+                        <td class="px-4 py-3 text-slate-600 whitespace-nowrap hidden sm:table-cell">${item.assignee || '미지정'}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 py-1 rounded-md text-[11px] font-semibold ${statusColor}">${item.status}</span>
+                        </td>
+                        <td class="px-4 py-3 text-center space-x-1 no-print whitespace-nowrap">
+                            <button onclick="openEditModal(${item.id})" class="text-slate-400 hover:text-blue-600 transition px-1.5 py-1" title="수정">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteRow(${item.id})" class="text-slate-400 hover:text-rose-600 transition px-1.5 py-1" title="삭제">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function initCharts() {
+            const ctxBuilding = document.getElementById('buildingChart').getContext('2d');
+            buildingChartInstance = new Chart(ctxBuilding, {
+                type: 'bar',
+                data: getBuildingChartData(),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            const ctxCause = document.getElementById('causeChart').getContext('2d');
+            causeChartInstance = new Chart(ctxCause, {
+                type: 'doughnut',
+                data: getCauseChartData(),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function getBuildingChartData() {
+            const buildings = ['A', 'B', 'C', 'D'];
+            const faultCounts = buildings.map(b => detectorLogs.filter(l => l.building === b && l.type === '고장').length);
+            const nonFireCounts = buildings.map(b => detectorLogs.filter(l => l.building === b && l.type === '비화재보').length);
+
+            return {
+                labels: ['A동', 'B동', 'C동', 'D동'],
+                datasets: [
+                    { label: '고장 (탈거/손상)', data: faultCounts, backgroundColor: 'rgba(239, 68, 68, 0.85)', borderRadius: 6 },
+                    { label: '비화재보', data: nonFireCounts, backgroundColor: 'rgba(245, 158, 11, 0.85)', borderRadius: 6 }
+                ]
+            };
+        }
+
+        function getCauseChartData() {
+            const causes = ['누수/침수', '결로현상', '외부노출/방풍실', '감지기고장', '기타'];
+            const counts = causes.map(c => detectorLogs.filter(l => l.cause === c).length);
+
+            return {
+                labels: causes,
+                datasets: [{
+                    data: counts,
+                    backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4', '#a855f7', '#64748b']
+                }]
+            };
+        }
+
+        function updateCharts() {
+            if (buildingChartInstance && causeChartInstance) {
+                buildingChartInstance.data = getBuildingChartData();
+                buildingChartInstance.update();
+
+                causeChartInstance.data = getCauseChartData();
+                causeChartInstance.update();
+            }
+        }
+
+        function updateKPIs() {
+            const total = detectorLogs.length;
+            const nonfire = detectorLogs.filter(l => l.type === '비화재보').length;
+            const fault = detectorLogs.filter(l => l.type === '고장').length;
+
+            const ratio = total > 0 ? Math.round((nonfire / total) * 100) : 0;
+
+            const buildingMap = {};
+            detectorLogs.forEach(l => { buildingMap[l.building] = (buildingMap[l.building] || 0) + 1; });
+            let maxBuilding = '-';
+            let maxCount = 0;
+            for (let b in buildingMap) {
+                if (buildingMap[b] > maxCount) {
+                    maxCount = buildingMap[b];
+                    maxBuilding = b;
+                }
+            }
+
+            document.getElementById('kpi-total').innerText = `${total}건`;
+            document.getElementById('kpi-nonfire').innerText = `${nonfire}건`;
+            document.getElementById('kpi-nonfire-ratio').innerText = `전체 중 ${ratio}%`;
+            document.getElementById('kpi-fault').innerText = `${fault}건`;
+            document.getElementById('kpi-hotspot').innerText = `${maxBuilding}동 (${maxCount}건)`;
+        }
+
+        function openAddModal() {
+            document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-plus-circle text-emerald-400"></i> 신규 고장/감시 내역 등록`;
+            document.getElementById('submit-btn-text').innerText = "저장하기";
+            document.getElementById('form-edit-id').value = "";
+            document.getElementById('add-form').reset();
+            
+            const now = new Date();
+            document.getElementById('form-date').value = `${now.getMonth() + 1}/${now.getDate()}`;
+            
+            syncStatusInput();
+            document.getElementById('add-modal').classList.remove('hidden');
+        }
+
+        function openEditModal(id) {
+            const item = detectorLogs.find(l => l.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-blue-400"></i> 감지기 이력 정보 수정`;
+            document.getElementById('submit-btn-text').innerText = "수정 완료";
+            document.getElementById('form-edit-id').value = item.id;
+
+            document.getElementById('form-date').value = item.date;
+            document.getElementById('form-type').value = item.type;
+            document.getElementById('form-location').value = item.location;
+            document.getElementById('form-address').value = item.address;
+            document.getElementById('form-detector-type').value = item.detectorType || '방화셔터 연기감지기';
+            document.getElementById('form-assignee').value = item.assignee || '';
+            document.getElementById('form-desc').value = item.desc;
+            document.getElementById('form-cause').value = item.cause;
+
+            const selectEl = document.getElementById('form-status-select');
+            const customInput = document.getElementById('form-status');
+            
+            if (['감지기 탈거', '입력차단', '점검완료', '창가측 우천영향'].includes(item.status)) {
+                selectEl.value = item.status;
+                customInput.classList.add('hidden');
+            } else {
+                selectEl.value = 'custom';
+                customInput.value = item.status;
+                customInput.classList.remove('hidden');
+            }
+
+            document.getElementById('add-modal').classList.remove('hidden');
+        }
+
+        function syncStatusInput() {
+            const selectVal = document.getElementById('form-status-select').value;
+            const inputEl = document.getElementById('form-status');
+            if (selectVal === 'custom') {
+                inputEl.classList.remove('hidden');
+            } else {
+                inputEl.classList.add('hidden');
+            }
+        }
+
+        function applyPreset(type) {
+            const dateStr = `${new Date().getMonth() + 1}/${new Date().getDate()}`;
+            document.getElementById('form-date').value = dateStr;
+
+            if (type === '방풍실') {
+                document.getElementById('form-type').value = "고장";
+                document.getElementById('form-location').value = "B/B1F";
+                document.getElementById('form-address').value = "0414-1037";
+                document.getElementById('form-detector-type').value = "방화셔터 연기감지기";
+                document.getElementById('form-desc').value = "방풍실내 높은 습도영향으로 오동작 및 탈거";
+                document.getElementById('form-cause').value = "외부노출/방풍실";
+                document.getElementById('form-status-select').value = "감지기 탈거";
+            } else if (type === '램프') {
+                document.getElementById('form-type').value = "고장";
+                document.getElementById('form-location').value = "C/1F";
+                document.getElementById('form-address').value = "0428-3023";
+                document.getElementById('form-detector-type').value = "아날로그 감지기";
+                document.getElementById('form-desc').value = "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거";
+                document.getElementById('form-cause').value = "누수/침수";
+                document.getElementById('form-status-select').value = "감지기 탈거";
+            } else if (type === '결로') {
+                document.getElementById('form-type').value = "고장";
+                document.getElementById('form-location').value = "D/B1F";
+                document.getElementById('form-address').value = "0436-1033";
+                document.getElementById('form-detector-type').value = "아날로그 감지기";
+                document.getElementById('form-desc').value = "D동 지하1층 매장 주방내 정온식감지기 결로현상";
+                document.getElementById('form-cause').value = "결로현상";
+                document.getElementById('form-status-select').value = "감지기 탈거";
+            } else if (type === '그레이팅') {
+                document.getElementById('form-type').value = "비화재보";
+                document.getElementById('form-location').value = "C/B1F";
+                document.getElementById('form-address').value = "0436-2070";
+                document.getElementById('form-detector-type').value = "일반 연기감지기";
+                document.getElementById('form-desc').value = "보행통로 중간 스틸 그레이팅 상단 위 감지기 우천 습기 오동작";
+                document.getElementById('form-cause').value = "외부노출/방풍실";
+                document.getElementById('form-status-select').value = "점검완료";
+            }
+            syncStatusInput();
+            showToast(`'${type}' 예시 데이터가 적용되었습니다.`);
+        }
+
+        function closeAddModal() {
+            document.getElementById('add-modal').classList.add('hidden');
+            document.getElementById('add-form').reset();
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('form-edit-id').value;
+
+            const date = document.getElementById('form-date').value;
+            const type = document.getElementById('form-type').value;
+            const location = document.getElementById('form-location').value;
+            const address = document.getElementById('form-address').value;
+            const detectorType = document.getElementById('form-detector-type').value;
+            const assignee = document.getElementById('form-assignee').value || "담당자 미지정";
+            const desc = document.getElementById('form-desc').value;
+            const cause = document.getElementById('form-cause').value;
+
+            const selectVal = document.getElementById('form-status-select').value;
+            const customVal = document.getElementById('form-status').value;
+            const status = selectVal === 'custom' ? (customVal || '등록됨') : selectVal;
+
+            const building = location.charAt(0).toUpperCase();
+
+            if (editId) {
+                const index = detectorLogs.findIndex(l => l.id == editId);
+                if (index !== -1) {
+                    detectorLogs[index] = {
+                        ...detectorLogs[index],
+                        date,
+                        type,
+                        location,
+                        building: ['A','B','C','D'].includes(building) ? building : 'C',
+                        address,
+                        detectorType,
+                        assignee,
+                        desc,
+                        cause,
+                        status
+                    };
+                    showToast("감지기 이력이 성공적으로 수정되었습니다.");
+                }
+            } else {
+                const newItem = {
+                    id: Date.now(),
+                    date,
+                    type,
+                    location,
+                    building: ['A','B','C','D'].includes(building) ? building : 'C',
+                    address,
+                    detectorType,
+                    assignee,
+                    count: 1,
+                    desc,
+                    cause,
+                    status
+                };
+                detectorLogs.unshift(newItem);
+                showToast("신규 고장/감시 이력이 등록되었습니다.");
+            }
+
+            closeAddModal();
+            saveCurrentDashboardState();
+            renderTable();
+            updateKPIs();
+            updateCharts();
+        }
+
+        function deleteRow(id) {
+            detectorLogs = detectorLogs.filter(l => l.id !== id);
+            saveCurrentDashboardState();
+            renderTable();
+            updateKPIs();
+            updateCharts();
+            showToast("내역이 삭제되었습니다.");
+        }
+
+        function openTab(tabName) {
+            const dashTab = document.getElementById('tab-dashboard');
+            const planTab = document.getElementById('tab-plan');
+
+            if (dashTab) dashTab.classList.add('hidden');
+            if (planTab) planTab.classList.add('hidden');
+
+            document.getElementById('tab-btn-dashboard').className = "py-2.5 px-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5 transition";
+            document.getElementById('tab-btn-plan').className = "py-2.5 px-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5 transition";
+
+            if (tabName === 'dashboard') {
+                if (dashTab) dashTab.classList.remove('hidden');
+                document.getElementById('tab-btn-dashboard').className = "py-2.5 px-3 border-b-2 border-blue-500 text-blue-400 flex items-center gap-1.5 transition";
+            } else {
+                if (planTab) planTab.classList.remove('hidden');
+                document.getElementById('tab-btn-plan').className = "py-2.5 px-3 border-b-2 border-blue-500 text-blue-400 flex items-center gap-1.5 transition";
+            }
+        }
+
+        function openNewDashModal() {
+            document.getElementById('dash-form').reset();
+            document.getElementById('dash-modal').classList.remove('hidden');
+        }
+
+        function closeNewDashModal() {
+            document.getElementById('dash-modal').classList.add('hidden');
+        }
+
+        function handleNewDashSubmit(e) {
+            e.preventDefault();
+            const title = document.getElementById('dash-title').value;
+            const period = document.getElementById('dash-period').value || "2026.08.01 ~ 08.31";
+            const dept = document.getElementById('dash-dept').value || "종합방재실/소방파트";
+            const target = document.getElementById('dash-target').value || "전체 동";
+            const desc = document.getElementById('dash-desc').value || "우천 및 습기 관제";
+
+            const newDash = {
+                id: 'dash-' + Date.now(),
+                title,
+                period,
+                dept,
+                target,
+                desc,
+                updatedAt: new Date().toLocaleString(),
+                logs: []
+            };
+
+            dashboards.push(newDash);
+            saveDashboardsToStorage();
+            renderDashboardList();
+            switchDashboard(newDash.id);
+            closeNewDashModal();
+            showToast("새 대시보드가 생성되었습니다.");
+        }
+
+        function exportDataCSV() {
+            saveCurrentDashboardState();
+            const cur = getActiveDashboard();
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "일자,구분,동/층,Address,장치종류,발생내역,원인분류,담당자,상태\n";
+
+            detectorLogs.forEach(item => {
+                const row = [
+                    `"${item.date}"`,
+                    `"${item.type}"`,
+                    `"${item.location}"`,
+                    `"${item.address}"`,
+                    `"${item.detectorType || ''}"`,
+                    `"${(item.desc || '').replace(/"/g, '""')}"`,
+                    `"${item.cause}"`,
+                    `"${item.assignee || ''}"`,
+                    `"${item.status}"`
+                ].join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${cur.title.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast("CSV 파일이 다운로드되었습니다.");
+        }
+
+        function exportDataTXT() {
+            saveCurrentDashboardState();
+            const cur = getActiveDashboard();
+            let txt = `=====================================================\n`;
+            txt += `         ${cur.title}\n`;
+            txt += `=====================================================\n`;
+            txt += `• 관제 기간 : ${cur.period}\n`;
+            txt += `• 작성 부서 : ${cur.dept}\n`;
+            txt += `• 대상 구역 : ${cur.target}\n`;
+            txt += `• 작성 일시 : ${new Date().toLocaleString()}\n`;
+            txt += `• 총 발생건 : ${detectorLogs.length}건 (비화재보: ${detectorLogs.filter(l=>l.type==='비화재보').length}건, 고장: ${detectorLogs.filter(l=>l.type==='고장').length}건)\n\n`;
+            txt += `[ 상세 장애 내역 목록 ]\n`;
+            txt += `-----------------------------------------------------\n`;
+
+            detectorLogs.forEach((item, idx) => {
+                txt += `${idx + 1}. [${item.date}] ${item.type} | 장소: ${item.location} (${item.address})\n`;
+                txt += `   - 종류: ${item.detectorType || '연기감지기'} | 담당자: ${item.assignee || '미지정'}\n`;
+                txt += `   - 내역: ${item.desc}\n`;
+                txt += `   - 원인: ${item.cause} | 상태: ${item.status}\n\n`;
+            });
+
+            txt += `=====================================================\n`;
+
+            downloadFile(txt, `${cur.title.replace(/\s+/g, '_')}_보고서.txt`, 'text/plain;charset=utf-8');
+            showToast("TXT 보고서 파일이 다운로드되었습니다.");
+        }
+
+        function exportDataDOC() {
+            saveCurrentDashboardState();
+            const cur = getActiveDashboard();
+            
+            let docHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><title>${cur.title}</title>
+            <style>
+                body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 11pt; line-height: 1.5; }
+                h1 { font-size: 18pt; color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 5px; }
+                table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+                th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; font-size: 10pt; }
+                th { background-color: #f1f5f9; color: #0f172a; }
+                .meta { background-color: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; font-size: 10pt; }
+            </style>
+            </head><body>
+            <h1>${cur.title}</h1>
+            <div class="meta">
+                <p><b>관제 기간:</b> ${cur.period} | <b>담당 부서:</b> ${cur.dept}</p>
+                <p><b>대상 구역:</b> ${cur.target} | <b>출력 일시:</b> ${new Date().toLocaleString()}</p>
+                <p><b>개요:</b> ${cur.desc}</p>
+            </div>
+            <h3>■ 감시 및 고장 내역 상세</h3>
+            <table>
+                <thead>
+                 <tr>
+                  <th>일자</th>
+                  <th>구분</th>
+                  <th>동/층</th>
+                  <th>Address</th>
+                  <th>장치 종류</th>
+                  <th>상세 내역</th>
+                  <th>추정 원인</th>
+                  <th>담당자</th>
+                  <th>현재 상태 / 비고</th>
+                 </tr>
+                </thead>
+                <tbody>`;
+
+            detectorLogs.forEach(item => {
+                docHtml += `<tr>
+                    <td>${item.date}</td>
+                    <td><b>${item.type}</b></td>
+                    <td>${item.location}</td>
+                    <td>${item.address}</td>
+                    <td>${item.detectorType || '연기감지기'}</td>
+                    <td>${item.desc}</td>
+                    <td>${item.cause}</td>
+                    <td>${item.assignee || '미지정'}</td>
+                    <td>${item.status}</td>
+                </tr>`;
+            });
+
+            docHtml += `</tbody></table></body></html>`;
+
+            downloadFile(docHtml, `${cur.title.replace(/\s+/g, '_')}_보고서.doc`, 'application/msword;charset=utf-8');
+            showToast("DOC 워드 파일이 다운로드되었습니다.");
+        }
+
+        function exportDataJSON() {
+            saveCurrentDashboardState();
+            const cur = getActiveDashboard();
+            const jsonStr = JSON.stringify(cur, null, 2);
+            downloadFile(jsonStr, `${cur.title.replace(/\s+/g, '_')}_백업.json`, 'application/json');
+            showToast("JSON 백업 파일이 다운로드되었습니다.");
+        }
+
+        function downloadFile(content, fileName, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
