@@ -747,16 +747,14 @@
                     });
 
                     if (fetchedDashboards.length > 0) {
-                dashboards = fetchedDashboards;
-                // 선택된 대시보드가 삭제되었거나 없을 경우 첫 번째 대시보드로 지정
-                if (!dashboards.find(d => d.id === activeDashId)) {
-                    activeDashId = dashboards[0].id;
-                }
-            } else {
-                dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
-                // [버그 수정] 접속 초기 지연으로 빈 데이터가 반환될 때 
-                // Firebase DB 전체가 초기화되는 것을 막기 위해 강제 저장 로직을 제거합니다.
-                // saveDashboardsToStorage(); 
+                        // [간단 수정] 1. 가져온 대시보드 목록을 ID(생성시간) 기준 최신순 정렬
+                        fetchedDashboards.sort((a, b) => b.id.localeCompare(a.id));
+                        dashboards = fetchedDashboards;
+                        
+                        // [간단 수정] 2. 마지막 시청 여부 상관없이 무조건 가장 최신(첫 번째) 대시보드 활성화
+                        activeDashId = dashboards[0].id;
+                    } else {
+                        dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
             }
             renderDashboardList();
             loadActiveDashboard();
@@ -778,15 +776,17 @@
                 const saved = localStorage.getItem('fire_dashboards_v2');
                 if (saved) {
                     dashboards = JSON.parse(saved);
-                    // 저장소에 저장된 대시보드 중 활성 ID가 없으면 첫 번째 항목으로 초기화
-                    if (!dashboards.find(d => d.id === activeDashId)) {
-                        activeDashId = dashboards[0].id;
-                    }
+                    
+                    // [간단 수정] 1. 로컬 데이터를 불러올 때도 최신순 정렬
+                    dashboards.sort((a, b) => b.id.localeCompare(a.id));
+                    
+                    // [간단 수정] 2. 무조건 가장 최신 대시보드 활성화
+                    activeDashId = dashboards[0].id;
                 } else {
                     // 최초 실행 시에만 기본 데이터 셋팅
                     dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
                 }
-            } catch(e) { 
+            } catch(e) {  
                 console.error(e);
                 dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
             }
@@ -843,6 +843,16 @@
         function renderDashboardList() {
             const selectEl = document.getElementById('dash-selector');
             if (!selectEl) return;
+            
+            // [추가된 로직 1] 대시보드 목록 렌더링 직전, 생성된 타임스탬프(id) 기준으로 최신순 정렬
+            dashboards.sort((a, b) => {
+                // 'dash-1784702463065' 형태의 id에서 숫자 타임스탬프만 추출하여 비교
+                const timeA = parseInt(a.id.replace('dash-', '')) || 0;
+                const timeB = parseInt(b.id.replace('dash-', '')) || 0;
+                return timeB - timeA; // 내림차순(최근 생성된 것이 위로 오게) 정렬
+            });
+
+            // 정렬된 데이터를 바탕으로 화면(셀렉트 박스)에 렌더링
             selectEl.innerHTML = dashboards.map(d => 
                 `<option value="${d.id}">${d.title} (${d.logs ? d.logs.length : 0}건)</option>`
             ).join('');
@@ -1480,3 +1490,4 @@
     </script>
 </body>
 </html>
+
