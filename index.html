@@ -996,6 +996,7 @@
                 else if(item.cause === '결로현상') causeBadge = `<span class="text-amber-600 font-medium"><i class="fa-solid fa-temperature-low mr-1"></i>결로</span>`;
                 else if(item.cause === '외부노출/방풍실') causeBadge = `<span class="text-sky-600 font-medium"><i class="fa-solid fa-wind mr-1"></i>외부/방풍실</span>`;
                 else if(item.cause === '감지기고장') causeBadge = `<span class="text-purple-600 font-medium"><i class="fa-solid fa-triangle-exclamation mr-1"></i>감지기고장</span>`;
+                else if(item.cause === '오동작') causeBadge = `<span class="text-purple-600 font-medium"><i class="fa-solid fa-triangle-exclamation mr-1"></i>오동작</span>`;    
                 else causeBadge = `<span class="text-slate-600 font-medium"><i class="fa-solid fa-circle-info mr-1"></i>기타</span>`;
 
                 let statusColor = 'bg-slate-100 text-slate-700';
@@ -1075,7 +1076,7 @@
         }
 
         function getCauseChartData() {
-            const causes = ['누수/침수', '결로현상', '외부노출/방풍실', '감지기고장', '기타'];
+            const causes = ['누수/침수', '결로현상', '외부노출/방풍실', '감지기고장', '오동작', '기타'];
             const counts = causes.map(c => detectorLogs.filter(l => l.cause === c).length);
 
             return {
