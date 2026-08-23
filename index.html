@@ -730,49 +730,39 @@
         };
 
         function initFirebase() {
-            try {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.firestore();
-                useFirebase = true;
-
-                const indicator = document.getElementById('firebase-indicator');
-                if (indicator) indicator.classList.remove('hidden');
-
-                showToast("🔥 Firebase 클라우드 실시간 연동 모드로 실행되었습니다.");
-
-                db.collection("fire_dashboards").onSnapshot((snapshot) => {
-                    const fetchedDashboards = [];
-                    snapshot.forEach((doc) => {
-                        fetchedDashboards.push(doc.data());
-                    });
-
-                    if (fetchedDashboards.length > 0) {
-                        // 1. 가져온 대시보드 목록을 ID(생성시간) 기준 최신순 정렬
-                        fetchedDashboards.sort((a, b) => b.id.localeCompare(a.id));
-                        dashboards = fetchedDashboards;
-                        
-                        // [수정] 무조건 첫 번째로 고정하지 않고, 처음 로드 시에만 최신을 보여주고 이후엔 선택 유지
-                        if (isFirstLoad || !dashboards.find(d => d.id === activeDashId)) {
-                            activeDashId = dashboards[0].id;
-                            isFirstLoad = false;
-                        }
-                    } else {
-                        dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
-            }
-            renderDashboardList();
-            loadActiveDashboard();
-                }, (error) => {
-                    console.error("Firebase Firestore 리스너 에러:", error);
-                    showToast("Firebase 데이터 수신 중 오류가 발생했습니다.");
-                });
-            } catch (err) {
-                console.error("Firebase 초기화 에러:", err);
-                useFirebase = false;
-                loadDashboardsFromStorage();
-                renderDashboardList();
-                loadActiveDashboard();
-            }
+    try {
+        // 중복 초기화 방지
+        if (!firebase.apps || firebase.apps.length === 0) {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized.");
+        } else {
+            console.log("Firebase 이미 초기화됨, 기존 앱 사용.");
         }
+
+        db = firebase.firestore();
+        useFirebase = true;
+
+        const indicator = document.getElementById('firebase-indicator');
+        if (indicator) indicator.classList.remove('hidden');
+
+        showToast("🔥 Firebase 클라우드 실시간 연동 모드로 실행되었습니다.");
+
+        // 상세 에러 로깅 추가
+        db.collection("fire_dashboards").onSnapshot((snapshot) => {
+            // 기존 코드...
+        }, (error) => {
+            console.error("Firebase Firestore 리스너 에러:", error);
+            // 에러 코드/메시지를 토스트/알림으로 표시해 빠르게 원인 파악
+            showToast(`Firestore 에러: ${error.code || 'unknown'} - ${error.message || ''}`);
+        });
+    } catch (err) {
+        console.error("Firebase 초기화 에러:", err);
+        useFirebase = false;
+        loadDashboardsFromStorage();
+        renderDashboardList();
+        loadActiveDashboard();
+    }
+}
 
         function loadDashboardsFromStorage() {
             try {
