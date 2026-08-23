@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>2026년 원그로브 종합방재실 고장/감시 이력관리 대시보드</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,7 +11,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Pretendard Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
     
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -748,7 +748,11 @@
 
                     if (fetchedDashboards.length > 0) {
                         // 1. 가져온 대시보드 목록을 ID(생성시간) 기준 최신순 정렬
-                        fetchedDashboards.sort((a, b) => b.id.localeCompare(a.id));
+                        fetchedDashboards.sort((a, b) => {
+                            const timeA = parseInt(a.id.replace('dash-', '')) || 0;
+                            const timeB = parseInt(b.id.replace('dash-', '')) || 0;
+                            return timeB - timeA;
+                        });
                         dashboards = fetchedDashboards;
                         
                         // [수정] 무조건 첫 번째로 고정하지 않고, 처음 로드 시에만 최신을 보여주고 이후엔 선택 유지
@@ -781,7 +785,11 @@
                     dashboards = JSON.parse(saved);
                     
                     // 1. 로컬 데이터를 불러올 때도 최신순 정렬
-                    dashboards.sort((a, b) => b.id.localeCompare(a.id));
+                    dashboards.sort((a, b) => {
+                        const timeA = parseInt(a.id.replace('dash-', '')) || 0;
+                        const timeB = parseInt(b.id.replace('dash-', '')) || 0;
+                        return timeB - timeA;
+                    });
                     
                     // [수정] 무조건 첫 번째로 고정하지 않고, 처음 로드 시에만 최신을 보여주고 이후엔 선택 유지
                     if (isFirstLoad || !dashboards.find(d => d.id === activeDashId)) {
@@ -1017,7 +1025,7 @@
                         <td class="px-4 py-3 font-bold text-slate-700 whitespace-nowrap">${item.location}</td>
                         <td class="px-4 py-3 font-mono text-slate-600 whitespace-nowrap hidden md:table-cell">${item.address}</td>
                         <td class="px-4 py-3 text-slate-600 whitespace-nowrap hidden lg:table-cell">${item.detectorType || '연기감지기'}</td>
-                        <td class="px-4 py-3 max-w-xs leading-relaxed text-slate-800 font-medium whitespace-pre-line hidden sm:table-cell">${item.desc}</td>
+                        <td class="px-4 py-3 max-w-xs leading-relaxed text-slate-800 font-medium whitespace-pre-line hidden md:table-cell">${item.desc}</td>
                         <td class="px-4 py-3 whitespace-nowrap hidden md:table-cell">${causeBadge}</td>
                         <td class="px-4 py-3 text-slate-600 whitespace-nowrap hidden sm:table-cell">${item.assignee || '미지정'}</td>
                         <td class="px-4 py-3 whitespace-nowrap">
@@ -1083,7 +1091,7 @@
                 labels: causes,
                 datasets: [{
                     data: counts,
-                    backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4', '#a855f7', '#64748b']
+                    backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4', '#a855f7', '#64748b', '#94a3b8']
                 }]
             };
         }
@@ -1156,7 +1164,7 @@
             const selectEl = document.getElementById('form-status-select');
             const customInput = document.getElementById('form-status');
             
-            if (['감지기 탈거', '입력차단', '점검완료', '창가측 우천영향'].includes(item.status)) {
+            if (['감지기 탈거', '입력차단', '점검중', '점검완료', '창가측 우천영향'].includes(item.status)) {
                 selectEl.value = item.status;
                 customInput.classList.add('hidden');
             } else {
