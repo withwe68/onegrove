@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#151C24">
+<meta name="description" content="원그로브 화재시 소방시설 연동로직 체험 시뮬레이터 — 방재실 비화재보 대응 교육용">
+<title>원그로브 화재시 소방시설 연동로직 체험 시뮬레이터</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23151C24'/%3E%3Ccircle cx='16' cy='16' r='8' fill='%23DE3B2C'/%3E%3C/svg%3E">
+<!-- 폰트는 내려받지 못해도 페이지가 즉시 뜨도록 비차단(non-blocking) 로드.
+     사내망처럼 외부 접속이 막힌 환경에서는 시스템 한글 폰트로 자동 대체된다. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<style>
+:root{
+  --bg:#151C24; --panel:#1F2A35; --panel2:#27353F; --line:#37474F;
+  --ink:#DFE7EE; --dim:#8FA3B3; --faint:#63788A;
+  --ok:#2FA35F; --pre:#E0A33C; --fire:#DE3B2C; --halt:#4A5B6B;
+  --verify:#8E7CE8; --cool:#3C8FC7; --key:#E07B39;
+}
+:root:not([data-theme="light"]){color-scheme:dark}
+:root[data-theme="dark"]{color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR",system-ui,"Malgun Gothic",sans-serif;
+ font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1380px;margin:0 auto;padding:20px 16px 64px}
+
+header{border-bottom:2px solid var(--line);padding-bottom:13px;margin-bottom:18px}
+h1{font-size:25px;font-weight:800;margin:0 0 14px;letter-spacing:-.01em;text-align:center}
+.sub{color:var(--dim);font-size:13.5px;margin:6px 0 0}
+.modes{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.modes button{font:inherit;font-size:13px;font-weight:500;color:var(--dim);background:var(--panel);
+ border:1px solid var(--line);padding:7px 13px;cursor:pointer}
+.modes button[aria-pressed="true"]{background:var(--panel2);color:var(--ink);border-color:var(--cool);box-shadow:inset 0 -2px 0 var(--cool)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
+
+/* 음향 컨트롤 */
+.audiobar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px;
+ padding:8px 11px;background:var(--panel);border:1px solid var(--line)}
+.audiobar button{font:inherit;font-size:12.5px;font-weight:600;color:var(--ink);
+ background:var(--panel2);border:1px solid var(--line);padding:6px 12px;cursor:pointer}
+.audiobar button[aria-pressed="true"]{background:#2B4A5E;border-color:var(--cool);color:#CFE6F5}
+.audiobar .barlabel{font-size:11.5px;font-weight:600;color:var(--dim);letter-spacing:.02em;
+ padding-right:2px;border-right:1px solid var(--line);margin-right:2px}
+.audiobar button.bcast{background:#3A5A2E;border-color:var(--ok);color:#D8F5DE}
+.audiobar button.recov{background:#2B3E52;border-color:var(--cool);color:#CFE6F5}
+.audiobar label{font-size:11.5px;color:var(--faint);display:flex;align-items:center;gap:6px}
+.audiobar select{font:inherit;font-size:12px;color:var(--ink);background:var(--panel2);
+ border:1px solid var(--line);padding:5px 7px}
+.audiobar input[type=range]{width:96px;margin:0;height:18px}
+.audiobar .note{font-size:11px;color:var(--faint);margin-left:auto}
+.sndon{color:var(--pre)}
+
+/* 3개 칸을 같은 높이로 늘리고, 발화 위치 칸을 넓혀 동·층 선택을 크게 보여준다 */
+.grid{display:grid;grid-template-columns:360px minmax(0,1fr) minmax(0,400px);gap:15px;align-items:stretch}
+@media (max-width:1150px){.grid{grid-template-columns:330px minmax(0,1fr)}.c3{grid-column:1/-1}}
+@media (max-width:760px){.grid{grid-template-columns:1fr}.c3{grid-column:auto}}
+.box{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.box>.body{flex:1 1 auto}
+.box h2{font-size:12.5px;font-weight:600;margin:0;padding:9px 12px;color:var(--dim);
+ background:var(--panel2);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.box h2 em{font-style:normal;color:var(--faint);font-family:"IBM Plex Mono",monospace;font-size:11px}
+.body{padding:12px}
+
+/* 적층도 */
+.dongs{display:grid;grid-template-columns:44px repeat(4,1fr);gap:3px;margin-bottom:6px}
+.dongs span{font-size:13px;font-weight:600;color:var(--dim);text-align:center;font-family:"IBM Plex Mono",monospace}
+.stack{display:flex;flex-direction:column;gap:3px}
+.frow{display:grid;grid-template-columns:44px repeat(4,1fr);gap:3px}
+.flab{font-size:12px;font-weight:500;color:var(--dim);display:flex;align-items:center;justify-content:flex-end;
+ padding-right:7px;font-family:"IBM Plex Mono",monospace}
+.cell{height:27px;background:var(--panel2);border:1px solid #33434F;padding:0;cursor:pointer;position:relative}
+/* 발화 위치 칸 — 남는 세로 공간을 적층도가 채워 동·층 선택이 크게 보이도록 */
+.c1 .body{display:flex;flex-direction:column}
+.c1 .stack{flex:1 1 auto}
+.c1 .frow{flex:1 1 auto;min-height:27px}
+.c1 .cell{height:100%}
+.cell:hover{border-color:var(--cool);background:#2F3E4A}
+.cell.sel{background:#3A4A57;border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.cell.alarm{background:rgba(222,59,44,.32);border-color:var(--fire)}
+.cell.prealarm{background:rgba(224,163,60,.26);border-color:var(--pre)}
+.cell.sht::before{content:"";position:absolute;left:2px;right:2px;top:2px;height:5px;background:var(--key)}
+.cell.origin{background:var(--fire);border-color:#FF8577}
+.cell.origin::after{content:"";position:absolute;inset:5px;border:2px solid #fff;opacity:.9}
+.usekey{margin-top:10px;font-size:11.5px;color:var(--faint);line-height:1.6}
+.usekey i{display:inline-block;width:10px;height:4px;background:var(--key);vertical-align:middle;margin-right:4px}
+.here{margin-top:9px;padding:8px 10px;background:var(--panel2);border:1px solid var(--line);font-size:13px}
+.here b{font-weight:600}
+.here small{display:block;color:var(--faint);font-size:11.5px;margin-top:2px}
+
+/* 입력 */
+.ingrp{font-size:10.5px;color:var(--faint);font-weight:600;margin:10px 0 4px;letter-spacing:.03em}
+.ingrp:first-child{margin-top:0}
+.inlist{display:flex;flex-direction:column;gap:3px}
+.inlist button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;
+ font:inherit;font-size:13px;text-align:left;color:var(--ink);background:var(--panel2);
+ border:1px solid #2E3D48;padding:7px 9px;cursor:pointer;line-height:1.3}
+.inlist button:hover{border-color:var(--cool)}
+.inlist button[aria-pressed="true"]{border-color:var(--ink);background:#394956}
+.inlist .kind{font-size:10px;color:var(--faint);font-family:"IBM Plex Mono",monospace;white-space:nowrap}
+.inlist button.na{opacity:.32;cursor:not-allowed}
+.inlist button.na:hover{border-color:#2E3D48}
+
+.opbox{margin-top:13px;border-top:1px solid var(--line);padding-top:13px}
+.wline{font-size:11.5px;color:var(--faint);margin:0 0 8px}
+.gauge .rowtop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.gauge .nm{font-size:12.5px;color:var(--dim)}
+.gauge .val{font-size:24px;font-weight:600}
+.track{position:relative;height:30px;background:var(--panel2);border:1px solid var(--line)}
+.band{position:absolute;top:0;bottom:0}
+.band.b1{background:rgba(224,163,60,.22)}
+.band.b2{background:rgba(222,59,44,.24)}
+.tick{position:absolute;top:-1px;bottom:-1px;width:2px}
+.tick.t1{background:var(--pre)} .tick.t2{background:var(--fire)}
+.tick span{position:absolute;top:-16px;transform:translateX(-50%);font-size:10.5px;white-space:nowrap;
+ font-family:"IBM Plex Mono",monospace}
+.tick.t1 span{color:var(--pre)} .tick.t2 span{color:var(--fire)}
+.needle{position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--ink)}
+input[type=range]{width:100%;margin:10px 0 0;accent-color:var(--cool);height:22px}
+.bigbtn{width:100%;font:inherit;font-size:15px;font-weight:600;padding:13px;cursor:pointer;
+ background:#5A2520;color:#FFD9D4;border:1px solid var(--fire)}
+.bigbtn[aria-pressed="true"]{background:var(--fire);color:#fff}
+.bigdesc{font-size:12.5px;color:var(--dim);margin:0 0 10px;line-height:1.5}
+
+.verdict{margin-top:13px;border:1px solid var(--line);padding:11px;background:var(--panel2)}
+.lamp{display:flex;align-items:center;gap:9px}
+.dot{width:13px;height:13px;border-radius:50%;flex:0 0 auto;background:var(--ok)}
+.st{font-weight:600;font-size:15px}
+.verdict p{margin:7px 0 0;font-size:12.5px;color:var(--dim);line-height:1.5}
+.s-pre .dot{background:var(--pre);animation:bl 1s steps(1,end) infinite}
+.s-fire .dot{background:var(--fire);animation:bl .5s steps(1,end) infinite}
+@keyframes bl{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.dot{animation:none!important}}
+
+/* 출력 */
+.ctl{display:flex;gap:7px;margin-bottom:10px}
+.ctl button{font:inherit;font-size:13px;font-weight:500;flex:1;padding:8px;cursor:pointer;
+ background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+.ctl button.go{background:#2B4A5E;border-color:var(--cool)}
+.ctl button:disabled{opacity:.4;cursor:default}
+ol.out{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+ol.out li{display:grid;grid-template-columns:11px 22px minmax(0,1fr) auto;gap:9px;align-items:start;
+ padding:9px 10px;border:1px solid #2E3A44;background:#232E38}
+.led{width:11px;height:11px;border-radius:50%;background:var(--halt);margin-top:3px}
+.stepno{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--faint);padding-top:2px}
+.dev{font-size:13.5px;line-height:1.4}
+.dev small{display:block;color:var(--faint);font-size:11.5px;margin-top:3px;line-height:1.45}
+.tag{font-size:10.5px;padding:2px 6px;white-space:nowrap;align-self:start;margin-top:2px;font-weight:500}
+li.on{background:rgba(222,59,44,.13);border-color:var(--fire)}
+li.on .led{background:var(--fire);box-shadow:0 0 7px rgba(222,59,44,.9);animation:led .8s steps(1,end) infinite}
+li.on .tag{background:rgba(222,59,44,.22);color:#FF8577;border:1px solid var(--fire);animation:led .8s steps(1,end) infinite}
+@keyframes led{50%{opacity:.2}}
+li.off{background:#1D262E;border-color:#2A343D;opacity:.55}
+li.off .dev{color:var(--faint)}
+li.off .dev small{color:#4E606F}
+li.off .tag{background:transparent;color:var(--faint);border:1px solid var(--halt)}
+li.off .stepno{color:#4E606F}
+@media (prefers-reduced-motion:reduce){li.on .led,li.on .tag{animation:none}}
+li.pending{opacity:.14}
+li.key4{box-shadow:inset 3px 0 0 var(--key)}
+.k4{display:inline-block;font-size:9.5px;color:var(--key);border:1px solid var(--key);
+ padding:0 4px;margin-left:6px;vertical-align:1px;font-weight:600}
+.vq{color:var(--verify);font-size:10.5px;margin-left:5px;border-bottom:1px dotted var(--verify);cursor:help}
+.empty{color:var(--faint);font-size:13px;padding:22px 4px;text-align:center;display:block;
+ border:1px dashed #2E3A44}
+.scope{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:12.5px;color:var(--dim)}
+.scope b{color:var(--ink);font-weight:600}
+.scope .shtline{color:var(--key);margin-top:4px;display:block}
+
+.sop ol{list-style:none;margin:0;padding:0}
+.sop li{display:grid;grid-template-columns:82px minmax(0,1fr);gap:10px;padding:7px 0;
+ border-bottom:1px solid #2B3842;font-size:12.5px}
+.sop li:last-child{border-bottom:0}
+.sop .t{font-family:"IBM Plex Mono",monospace;color:var(--cool);font-size:12px}
+.hint{font-size:12.5px;color:var(--dim);margin:0 0 11px;line-height:1.55}
+.cfggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:3px 16px}
+.cfggrid label{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:4px 0;cursor:pointer;line-height:1.35}
+.cfggrid input{margin:3px 0 0;accent-color:var(--ok);flex:0 0 auto}
+.cfggrid label:has(input:not(:checked)) span{color:var(--faint)}
+.cfggrid label.k span{color:var(--key)}
+.verify{border-left:3px solid var(--verify)}
+.verify ul{margin:0;padding-left:18px;font-size:12.5px;color:var(--dim);line-height:1.65}
+.verify li{margin-bottom:5px}
+.stackrow{display:flex;flex-direction:column;gap:15px;margin-top:15px}
+footer{margin-top:24px;padding-top:13px;border-top:1px solid var(--line);font-size:12px;color:var(--faint);line-height:1.6}
+
+/* ---------- 터치·모바일 대응 ---------- */
+button,select,label,.cell{-webkit-tap-highlight-color:rgba(60,143,199,.25)}
+button,.cell{user-select:none;-webkit-user-select:none;touch-action:manipulation}
+/* 슬라이더를 끌 때 화면이 같이 스크롤되지 않도록 */
+input[type=range]{touch-action:none}
+@media (hover:none){
+  .cell:hover{border-color:#33434F;background:var(--panel2)}
+  .inlist button:hover{border-color:#2E3D48}
+}
+@media (max-width:760px){
+  .wrap{padding:16px 14px 48px}
+  h1{font-size:20px;margin-bottom:10px}
+  .sub{font-size:13px}
+  /* 손가락으로 누르기 쉽도록 터치 타깃 확대 */
+  .dongs,.frow{grid-template-columns:40px repeat(4,1fr)}
+  .cell,.c1 .frow{min-height:38px}
+  .c1 .cell{height:38px}
+  .inlist button{padding:11px 10px;font-size:14px}
+  .modes button{padding:10px 14px;font-size:13.5px}
+  .audiobar{gap:8px;padding:10px}
+  .audiobar button{padding:9px 14px;font-size:13px}
+  .audiobar .note{margin-left:0;flex:1 1 100%;order:9}
+  .audiobar input[type=range]{width:110px;height:26px}
+  .ctl button{padding:11px}
+  .bigbtn{padding:15px}
+  input[type=range]{height:30px}
+  .cfggrid{grid-template-columns:1fr}
+  .cfggrid label{padding:7px 0}
+  ol.out li{grid-template-columns:11px 20px minmax(0,1fr) auto;padding:10px 9px}
+  .sop li{grid-template-columns:1fr;gap:2px}
+  .sop .t{font-weight:600}
+}
+@media (max-width:480px){
+  .tick span{font-size:9.5px}
+  .gauge .val{font-size:21px}
+}
+@media (max-width:420px){
+  .dongs,.frow{grid-template-columns:34px repeat(4,1fr);gap:2px}
+  .flab{font-size:11px;padding-right:5px}
+  h1{font-size:18px}
+  .box h2{font-size:12px;padding:9px 10px}
+  .body{padding:10px}
+}
+</style>
+</head>
+<body>
+<!-- 음원은 index.html과 같은 위치의 audio/ 폴더에서 상대경로로 불러옵니다.
+     iOS Safari는 webm/opus를 재생하지 못하므로 mp3를 먼저 두고 webm을 대체로 둡니다. -->
+<audio id="bellAudio" loop preload="auto" playsinline>
+  <source src="audio/bell.mp3" type="audio/mpeg">
+  <source src="audio/bell.webm" type="audio/webm">
+</audio>
+<audio id="sirenAudio" loop preload="auto" playsinline>
+  <source src="audio/siren.mp3" type="audio/mpeg">
+  <source src="audio/siren.webm" type="audio/webm">
+</audio>
+<audio id="paAudio" preload="auto" playsinline>
+  <source src="audio/pa-fire.mp3" type="audio/mpeg">
+  <source src="audio/pa-fire.webm" type="audio/webm">
+</audio>
+<audio id="paSiren" preload="none" playsinline>
+  <source src="audio/pa-siren-3s.mp3" type="audio/mpeg">
+  <source src="audio/pa-siren-3s.webm" type="audio/webm">
+</audio>
+<div class="wrap">
+
+<header>
+  <h1>원그로브 화재시 소방시설 연동로직 체험 시뮬레이터</h1>
+  <p class="sub">동·층을 고르고 입력설비를 동작시키면 출력 연동을 확인할 수 있습니다. 연동해제 최종검토 대상 4대설비(방화셔터 · 프리액션/드렌처 · 거실제연 · 공조대표화재)는 주황 표시로 구분됩니다.</p>
+  <div class="modes" role="group" aria-label="운영 모드">
+    <button data-mode="normal" aria-pressed="true">전체 정상 (연동정지 없음)</button>
+    <button data-mode="night" aria-pressed="false">주간 일부정지 (4대설비 연동정지)</button>
+    <button data-mode="custom" aria-pressed="false">직접 설정</button>
+  </div>
+
+</header>
+
+<div class="grid">
+  <section class="box c1">
+    <h2>1 · 발화 위치 <em>동 / 층</em></h2>
+    <div class="body">
+      <div class="dongs"><span></span><span>A</span><span>B</span><span>C</span><span>D</span></div>
+      <div class="stack" id="stack"></div>
+      <div class="here" id="here"></div>
+      <div class="usekey">지상 3F~11F 오피스 · 2F~B2 판매시설 · B3~B7 주차장<br><i></i>주황 표시 = 방화셔터 출력 구역</div>
+    </div>
+  </section>
+
+  <section class="box">
+    <h2>2 · 입력설비 <em>INPUT</em></h2>
+    <div class="body">
+      <div id="inlist" role="group" aria-label="입력설비 선택"></div>
+      <div class="opbox" id="opbox"></div>
+      <div class="verdict" id="verdict">
+        <div class="lamp"><span class="dot"></span><span class="st" id="vtext">대기</span></div>
+        <p id="vnote">입력설비를 선택하고 동작시키십시오.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="box c3">
+    <h2>3 · 출력 연동 <em>OUTPUT</em></h2>
+    <div class="body">
+      <div class="ctl">
+        <button id="play" class="go">순차 재생</button>
+        <button id="reset">초기화</button>
+      </div>
+      <ol class="out" id="out"><li class="empty">입력설비 동작 시 출력 연동이 표시됩니다.</li></ol>
+      <div class="scope" id="scope">경보 출력범위는 입력 성립 후 표시됩니다.</div>
+    </div>
+  </section>
+</div>
+
+<div class="stackrow">
+<section class="box">
+  <h2>연동정지 설정</h2>
+  <div class="body">
+    <p class="hint">기본값은 <b>전 설비 정상(연동정지 없음)</b>입니다. 체크박스를 누르면 그 설비에 <b>연동정지</b>가 걸려 화재신호가 와도 동작하지 않습니다. <b style="color:var(--key)">주황색</b>이 연동해제 최종검토 대상 설비이며, 프리액션과 드렌처는 조작반 버튼이 하나로 묶여 있어 함께 잡힙니다.</p>
+    <div class="cfggrid" id="cfg"></div>
+  </div>
+</section>
+
+<div class="audiobar">
+  <span class="barlabel">음향송출줄</span>
+  <button id="sndBtn" aria-pressed="true">🔊 음향 켜짐</button>
+  <label>음량 <input type="range" id="vol" min="0" max="100" value="45" aria-label="음량"></label>
+  <label>방송 선택
+    <select id="script">
+      <option value="nonfire">비화재 안내방송</option>
+      <option value="recover">비화재보 복구안내</option>
+      <option value="fire">화재시 안내방송</option>
+    </select>
+  </label>
+  <button id="broadcastBtn" class="bcast">▶ 송출</button>
+  <button id="stopSnd">음향 정지</button>
+  <button id="recoverBtn" class="recov">↺ 복구</button>
+  <span class="note">주경종·지구경종·비상방송은 연동정지가 없으면 화재신호와 동시에 자동 송출되고, 연동정지를 걸면 멈춥니다. 싸이렌(유수검지장치·가스계 연동) 구동 시 지구경종도 함께 명동합니다. 비상방송(화재시 안내방송)은 <b>실제 녹음(사이렌 5초+멘트+사이렌 5초)</b>을 다른 방송보다 높은 음량으로 반복 송출해 구분됩니다. 안내방송 3종은 [송출]을 누를 때만 나갑니다. [복구]는 화재신호를 발생 전 평상시 감시상태로 되돌립니다.</span>
+</div>
+
+<section class="box sop">
+  <h2><b>비화재보 SOP(같은 시간에 사람이 해야 하는 일) — 소방청고시 제2023-37호 《소방시설 폐쇄·차단 시 행동요령 등에 관한 고시》 기준</b></h2>
+  <div class="body">
+    <p class="hint">설비 연동은 수초 안에 끝납니다. 아래 시간은 그 뒤로 경종이 계속 울리는 상태에서 흘러갑니다.</p>
+    <ol>
+      <li><span class="t">T+0초</span><span>화재신호 수신. 발신 주소·동·층과 함께 <b>입력설비 종류</b>를 먼저 확인합니다. 일반 자탐감지기인지, 셔터·거실제연·프리액션 전용 감지기인지에 따라 대응이 달라집니다.</span></li>
+      <li><span class="t">T+30초 이내</span><span>1차 안내방송. 비화재보로 단정하지 말고 확인 중임을 알리는 문안을 사용합니다.</span></li>
+      <li><span class="t">T+5~8분</span><span>현장 확인 완료. 이 구간 내내 경종은 계속 울리고 민원 전화가 들어옵니다.</span></li>
+      <li><span class="t">확인 후</span><span>화재 아님 확인 → 재실자 안내 → 수신기 화재경보 복구 → 비화재보 방지조치. 소방청고시 제2023-37호 제3조제5호.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section class="box verify">
+  <h2>확인이 필요한 항목</h2>
+  <div class="body">
+    <ul>
+      <li><b>경보구역의 동(棟) 범위</b> — 층 범위는 발화층 및 직상 4개층 우선경보(NFTC 203 2.5.1.2) 적용. 같은 층에서 A·B동 / C·D동 그룹인지 4개동 일괄인지는 층별 확인 필요 (현재 3~7층 동 그룹, 8층 이상 동별 독립으로 가정).</li>
+      <li><b>공조대표화재의 AHU 묶음 범위</b> — 어느 감지기가 어느 AHU를 정지시키는지 계통도 대조 필요. 묶음 범위에 따라 피해등급 상향 가능.</li>
+      <li><b>설비자동제어(판매·마트) 수동복구 필요 여부</b> — 자동복구 불가 시 AHU 재기동 소요 증가.</li>
+      <li><b>거실제연·전실제연 수동조작함 조작 시 화재신호 성립 여부</b> — 현재는 설비만 기동하고 경보는 미발생으로 구현.</li>
+      <li><b>발신기 신호의 방화셔터 연동 여부</b> — 일반 자탐 화재신호와 동일하게 처리되는지 미확인.</li>
+      <li><b>주차장 패시브휀</b> — A·B구역 배기 / C·D구역 급기 교대 기동의 연동정지 포함 여부 미확인.</li>
+      <li><b>설비별 지연시간</b> — 실제 지연초 미상이라 순서(Step)만 표시. 실동시험 실측 필요.</li>
+    </ul>
+  </div>
+</section>
+</div>
+
+<footer>
+아날로그 임계값: 연기 예비경보 15% / 화재점 17%, 열 예비경보 60℃ / 화재점 80℃ (GFS F3G). 경보방식: 발화층 및 직상 4개층 우선경보 — 지상 2층 이상 발화 시 발화층+직상 4개층, 1층 발화 시 발화층+직상 4개층+지하 전층, 지하층 발화 시 발화층+직상층+기타 지하 전층. 방화셔터 1차기동 출력범위: 지상 3~11층·지하 3~7층 해당 셔터 개별 / 지상 1~2층 동 그룹 / 지하 1~2층 전동 일괄, 2차기동은 전 층 해당 셔터 개별. 싸이렌은 자탐 화재신호 연동 출력이 아니며, 유수검지장치(알람밸브·프리액션·드렌처) 발신 시 또는 가스계 소화설비 기동 시에만 동작합니다 — 자탐 지구음향장치는 지구경종입니다. 교육용 재현이며 실제 동작 시간과 다를 수 있습니다.
+</footer>
+</div>
+
+<script>
+const FLOORS=["11F","10F","9F","8F","7F","6F","5F","4F","3F","2F","1F","B1","B2","B3","B4","B5","B6","B7"];
+const DONGS=["A","B","C","D"];
+const isB=f=>f[0]==="B";
+const SALES=["2F","1F","B1","B2"];
+function useOf(f){
+  if(isB(f)) return (f==="B1"||f==="B2")?"sales":"parking";
+  return parseInt(f)<=2?"sales":"office";
+}
+const USE_KO={sales:"판매시설",office:"오피스",parking:"주차장"};
+
+/* ---------- 경보범위: 발화층 및 직상 4개층 우선경보 ---------- */
+function floorSpan(f){
+  const base=FLOORS.filter(isB);
+  if(isB(f)) return f==="B1"?base.concat(["1F"]):base.slice();
+  const n=parseInt(f),out=[];
+  for(let i=n;i<=Math.min(n+4,11);i++) out.push(i+"F");
+  if(n===1) base.forEach(x=>out.push(x));
+  return out;
+}
+function dongSpan(f,d){
+  if(isB(f)||parseInt(f)<=2) return DONGS.slice();
+  const n=parseInt(f);
+  if(n<=7) return (d==="A"||d==="B")?["A","B"]:["C","D"];
+  return [d];
+}
+function alarmCells(f,d){
+  const out=[];
+  floorSpan(f).forEach(x=>dongSpan(f,d).forEach(y=>out.push(x+y)));
+  return out;
+}
+function scopeText(f,d){
+  const ds=dongSpan(f,d), dl=ds.length===4?"A·B·C·D 전동":ds.join("·")+"동";
+  if(isB(f)) return "지하 1~7층 전층"+(f==="B1"?" + 지상 1층":"")+" · "+dl;
+  const n=parseInt(f), top=Math.min(n+4,11);
+  let s = top>n ? "지상 "+n+"층 ~ "+top+"층 (발화층 + 직상 "+(top-n)+"개층)"
+                : "지상 "+n+"층 (최상층 — 직상층 없음)";
+  if(n===1) s+=" + 지하 1~7층 전층";
+  return s+" · "+dl;
+}
+
+/* ---------- 방화셔터 출력범위 ---------- */
+function shutter1(f,d){
+  if(f==="B1"||f==="B2") return {cells:DONGS.map(x=>f+x),label:"A·B·C·D 전동 일괄"};
+  if(f==="1F"||f==="2F"){const g=(d==="A"||d==="B")?["A","B"]:["C","D"];
+    return {cells:g.map(x=>f+x),label:g.join("+")+"동 그룹 출력"};}
+  return {cells:[f+d],label:"해당 셔터 개별"};
+}
+function shutter2(f,d){ return {cells:[f+d],label:"해당 셔터 개별 (완전폐쇄)"}; }
+/* 일반 자탐 화재신호가 셔터 1차를 유발하는 층 */
+const GEN_SHUTTER=["1F","2F","B1","B2"];
+
+/* ---------- 출력설비 ---------- */
+const KEY4=["sht1","sht2","preact","dren","rdmp","rexh","rsup","ahu"];
+const OUT={
+ recv:{n:"수신기 화재표시 · 발신주소 표시",fixed:1},
+ mbell:{n:"주경종 (수신기 내장)"},
+ resp:{n:"발신기 응답표시등 점등",fixed:1},
+ svplamp:{n:"수동조작함 동작표시등 점등",fixed:1},
+ gasind:{n:"가스누설 표시 · 경보부저",fixed:1},
+ bell:{n:"지구경종"},
+ pag:{n:"비상방송"},
+ vis:{n:"시각경보기"},
+ sir:{n:"싸이렌 (유수검지장치 · 가스계 연동)"},
+ exit:{n:"유도등 비상점등"},
+ fdoor:{n:"방화문 자동폐쇄"},
+ sht1:{n:"방화셔터 1차 하강 (부분)"},
+ sht2:{n:"방화셔터 2차 하강 (완전폐쇄)"},
+ vdmp:{n:"전실제연 급기댐퍼 개방"},
+ vfan:{n:"전실제연 급기송풍기 기동"},
+ vexh:{n:"전실제연 배기댐퍼 개방 · 배기휀 기동"},
+ swin:{n:"배연창 개방"},
+ rdmp:{n:"거실제연 댐퍼 개방"},
+ rexh:{n:"거실제연 배기휀 기동"},
+ rsup:{n:"거실제연 급기휀 기동"},
+ pfan:{n:"주차장 패시브휀 기동"},
+ ahu:{n:"공조대표화재 — AHU 정지"},
+ elev:{n:"엘리베이터 기준층 리콜 · 운행정지"},
+ preact:{n:"프리액션 밸브 개방 · 2차측 충수"},
+ dren:{n:"드렌처 일제살수"},
+ drenz:{n:"해당 방수구역 개방형헤드 살수"},
+ avs:{n:"유수검지장치 발신 · 밸브개방표시등 점등"},
+ pump:{n:"소화펌프 기동"},
+ gasrel:{n:"가스계 약제 방출"},
+ gasdmp:{n:"해당구역 공조정지 · 댐퍼 폐쇄"}
+};
+const ALL=Object.keys(OUT);
+/* 주간 일부정지에서 연동정지 상태인 설비 = 해제 최종검토 4대설비(엘리베이터 제외) */
+const HALT_NIGHT=["sht1","sht2","preact","dren","drenz","rdmp","rexh","rsup","ahu"];
+/* 프리액션·드렌처는 연동정지 버튼이 하나 — 함께 토글 */
+const PD_GROUP=["preact","dren","drenz"];
+
+/* ---------- 입력설비 ---------- */
+const ANY=()=>true;
+const INPUTS=[
+ {g:"자동화재탐지 (일반)",id:"smk",name:"연기감지기",kind:"아날로그",mode:"analog",
+  unit:"%",min:0,max:25,step:.5,pre:15,fire:17,init:0,at:ANY,where:"전 층"},
+ {g:"자동화재탐지 (일반)",id:"heat",name:"열감지기",kind:"아날로그",mode:"analog",
+  unit:"℃",min:20,max:100,step:1,pre:60,fire:80,init:20,at:ANY,where:"전 층"},
+ {g:"자동화재탐지 (일반)",id:"call",name:"발신기",kind:"수동",mode:"binary",at:ANY,where:"전 층",
+  desc:"누름스위치를 누르는 즉시 화재신호가 성립합니다. 예비경보 구간이 없어 확인할 시간이 주어지지 않습니다."},
+
+ {g:"방화셔터 전용",id:"shs",name:"셔터 연기감지기",kind:"전용",mode:"binary",at:ANY,where:"셔터 설치구역 (전 층)",
+  desc:"해당 셔터를 1차(부분) 하강시키며, 일반 감지기와 동일하게 화재신호가 성립해 경보계통이 함께 동작합니다. 단 지하 2층에서는 1차기동을 유발하지 않고 2차기동만 일으킵니다."},
+ {g:"방화셔터 전용",id:"shh",name:"셔터 정온식감지기",kind:"전용",mode:"binary",at:ANY,where:"셔터 설치구역 (전 층)",
+  desc:"해당 셔터를 2차(완전폐쇄)까지 하강시킵니다. 전 층 공통으로 해당 셔터만 개별 동작하며, 경보계통은 함께 성립합니다."},
+
+ {g:"거실제연 전용",id:"rsmk",name:"거실제연 감지기",kind:"아날로그",mode:"analog",
+  unit:"%",min:0,max:25,step:.5,pre:15,fire:17,init:0,
+  at:f=>SALES.includes(f),where:"지상 2층 ~ 지하 2층 판매시설층",
+  desc:"거실제연 전용 감지기입니다. 일반 자탐 화재신호와 별개로 이 감지기가 동작해야 거실제연설비가 연동됩니다."},
+ {g:"거실제연 전용",id:"svpr",name:"거실제연 수동조작함",kind:"수동",mode:"binary",
+  at:f=>SALES.includes(f),where:"지상 2층 ~ 지하 2층 판매시설층",
+  desc:"해당 동에 설정된 제연구역의 댐퍼를 열고 배기휀·급기휀을 기동합니다. 정상 공조가 즉시 차단됩니다."},
+
+ {g:"프리액션 · 드렌처",id:"pxsmk",name:"프리액션 교차회로 감지기",kind:"아날로그",mode:"analog",
+  unit:"%",min:0,max:25,step:.5,pre:15,fire:17,init:0,
+  at:f=>["1F","B1","B2"].includes(f),where:"지상 1층 · 지하 1~2층",
+  desc:"교차회로 1차신호(연기)만으로 프리액션 밸브가 개방됩니다. 열감지기의 2차신호 확인 절차가 없어 오동작 문턱이 낮습니다."},
+ {g:"프리액션 · 드렌처",id:"svpp",name:"프리액션 수동조작함",kind:"수동",mode:"binary",
+  at:f=>["1F","B1","B2"].includes(f),where:"지상 1층 · 지하 1~2층",
+  desc:"프리액션 밸브를 직접 개방합니다. 2차측 배관에 물이 차고 헤드 개방 시 살수됩니다."},
+ {g:"프리액션 · 드렌처",id:"drsmk",name:"드렌처 전용 감지기",kind:"아날로그",mode:"analog",
+  unit:"%",min:0,max:25,step:.5,pre:15,fire:17,init:0,
+  at:(f,d)=>f==="B1"&&(d==="C"||d==="D"),where:"지하 1층 C·D동",
+  desc:"드렌처 전용 감지기입니다. 프리액션과는 신호상 무관한 별개 계통으로, 이 감지기가 동작해야만 살수됩니다."},
+ {g:"프리액션 · 드렌처",id:"svpd",name:"드렌처 수동조작함",kind:"수동",mode:"binary",
+  at:(f,d)=>f==="B1"&&(d==="C"||d==="D"),where:"지하 1층 C·D동",
+  desc:"개방형 헤드에 일제 살수합니다. 기동하면 중간에 멈출 수 없고, 살수 구역 전체가 수손 피해를 입습니다."},
+
+ {g:"기타 설비",id:"svpv",name:"전실제연 수동조작함 (급/배기)",kind:"수동",mode:"binary",at:ANY,where:"전 층 피난계단",
+  desc:"피난계단 부속실의 급기댐퍼·급기송풍기와 배기댐퍼·배기휀을 기동합니다."},
+ {g:"기타 설비",id:"svpg",name:"가스계 소화설비 수동조작함",kind:"수동",mode:"binary",
+  at:f=>f==="B5",where:"지하 5층",
+  desc:"기동스위치 조작 후 지연시간이 경과하면 약제가 방출됩니다. 지연 중에는 비상스위치로만 중단할 수 있습니다."},
+ {g:"기타 설비",id:"ps",name:"알람밸브 압력스위치 (PS)",kind:"소화설비",mode:"binary",at:ANY,where:"알람밸브실",
+  desc:"스프링클러 헤드 개방 등으로 유수가 검지되면 동작합니다."},
+ {g:"기타 설비",id:"gas",name:"가스누설경보기",kind:"경보설비",mode:"binary",at:ANY,where:"가스 사용구역",
+  desc:"가연성 가스 누설을 검지합니다. 자동화재탐지 화재신호와는 별개 계통입니다."}
+];
+const avail=(I,f,d)=>I.at(f,d);
+
+/* ---------- 일반 자탐 화재신호 연동 ---------- */
+function fireCascade(f,d,opt){
+  opt=opt||{};
+  const u=useOf(f), L=[], P=(id,note,vq)=>L.push({id,note,vq});
+  P("recv","발신 주소 · 동 · 층 표시");
+  P("mbell","방재실 수신기 주경종 명동");
+  P("bell","발화층 및 직상 4개층 우선경보 구역 일제 명동");
+  P("pag","발화층 및 직상 4개층 스피커 출력 — 지하층 발화 시 지하 전층");
+  P("vis","음성점멸");
+  P("exit");
+  P("fdoor");
+  /* 방화셔터 — 일반 자탐은 지상 1~2층·지하 1~2층에서만 1차기동 유발 */
+  const stg = opt.shutter;
+  if(stg===1) P("sht1","출력범위: "+shutter1(f,d).label);
+  else if(stg===2) P("sht2","출력범위: "+shutter2(f,d).label);
+  else if(stg===undefined && GEN_SHUTTER.includes(f)) P("sht1","출력범위: "+shutter1(f,d).label);
+  P("vdmp"); P("vfan");
+  if(u==="office"&&!isB(f)&&parseInt(f)>=3) P("swin","우천·강풍 시 침수 피해 주의");
+  if(u==="parking") P("pfan","A·B구역 배기 / C·D구역 급기 교대",1);
+  if(SALES.includes(f)) P("ahu","해당 층 계통 AHU 일괄 정지 — 설비자동제어 수동복구 필요 여부 확인요망",1);
+  P("elev","A·B·C·D 전동 전 호기 동시 기준층(1층 또는 2층) 강제리콜");
+  return L;
+}
+
+function compute(st){
+  const {f,d,input,val,fired}=st;
+  const I=INPUTS.find(x=>x.id===input);
+  if(!I) return {lv:0,list:[],alarm:false};
+  const on = I.mode==="analog" ? (val>=I.fire?2:val>=I.pre?1:0) : (fired?2:0);
+  /* 예비경보 — 주경종만 단독 명동, 지구경종·비상방송·설비 연동은 없음 */
+  if(on===1) return {lv:1,alarm:false,list:[{id:"mbell",note:"예비경보 — 방재실 확인 요망. 지구경종·설비 연동은 아직 없음"}]};
+  if(on<2) return {lv:on,list:[],alarm:false};
+
+  switch(I.id){
+    case "smk": case "heat":
+      return {lv:2,alarm:true,list:fireCascade(f,d,{}),sht:GEN_SHUTTER.includes(f)?shutter1(f,d):null};
+    case "call":
+      return {lv:2,alarm:true,sht:GEN_SHUTTER.includes(f)?shutter1(f,d):null,
+        list:[{id:"resp",note:"누름 위치 확인용"},
+          ...fireCascade(f,d,{}).map(x=>x.id==="sht1"?{id:x.id,note:x.note,vq:1}:x)]};
+    case "shs":
+      if(f==="B2") return {lv:2,alarm:true,sht:shutter2(f,d),list:fireCascade(f,d,{shutter:2})};
+      return {lv:2,alarm:true,sht:shutter1(f,d),list:fireCascade(f,d,{shutter:1})};
+    case "shh":
+      return {lv:2,alarm:true,sht:shutter2(f,d),list:fireCascade(f,d,{shutter:2})};
+
+    case "rsmk": case "svpr":
+      return {lv:2,alarm:false,list:[
+        {id: I.id==="svpr"?"svplamp":"recv", note: I.id==="svpr"?"거실제연 SVP 동작 표시":"거실제연 감지기 동작 표시"},
+        {id:"rdmp",note:"해당 동에 설정된 제연구역 댐퍼 개방 — 정상 공조 차단"},
+        {id:"rexh",note:"배기휀 기동"},
+        {id:"rsup",note:"급기휀 기동 — 덕트 분진 비산, 경량 상품 비산 우려"},
+        ...(I.id==="svpr"?[{id:"recv",note:"화재신호까지 성립하는지 확인 필요",vq:1}]:[])]};
+
+    case "pxsmk": case "svpp":
+      return {lv:2,alarm:false,list:[
+        {id: I.id==="svpp"?"svplamp":"recv",
+         note: I.id==="svpp"?"프리액션 SVP 동작 표시":"교차회로 1차신호(연기) 성립 — 열감지 확인 불필요"},
+        {id:"preact",note:"밸브 개방 · 2차측 배관 충수"},
+        {id:"avs",note:"유수검지장치 화재신호 발신 · 밸브개방표시등 점등"},
+        {id:"sir",note:"유수검지장치 발신에 따른 음향장치 경보 (NFPC 103 제9조)"},
+        {id:"pump",note:"압력 저하에 따른 기동"}]};
+
+    case "drsmk": case "svpd":
+      return {lv:2,alarm:false,list:[
+        {id: I.id==="svpd"?"svplamp":"recv",
+         note: I.id==="svpd"?"드렌처 SVP 동작 표시":"드렌처 전용 감지기 동작 — 프리액션과 무관한 별개 계통"},
+        {id:"dren",note:"개방형 헤드 일제살수 — 기동 후 중단 불가"},
+        {id:"avs",note:"유수검지장치 화재신호 발신 · 밸브개방표시등 점등"},
+        {id:"sir",note:"유수검지장치 발신에 따른 음향장치 경보"},
+        {id:"pump",note:"압력 저하에 따른 기동"},
+        {id:"drenz",note:"마곡역 연결통로 인접 구역 전면 수손"}]};
+
+    case "svpv":
+      return {lv:2,alarm:false,list:[
+        {id:"svplamp",note:"전실제연 SVP 동작 표시"},
+        {id:"vdmp",note:"해당 피난계단 부속실 급기댐퍼 개방"},
+        {id:"vfan",note:"급기송풍기 기동"},
+        {id:"vexh",note:"배기댐퍼 개방 및 배기휀 기동",vq:1},
+        {id:"recv",note:"화재신호까지 성립하는지 확인 필요",vq:1}]};
+    case "svpg":
+      return {lv:2,alarm:false,list:[
+        {id:"svplamp",note:"기동스위치 조작 표시"},
+        {id:"sir",note:"기동장치 조작과 연동한 음향경보 — 이 지연 구간에만 비상스위치로 중단 가능. 방출 개시 후 1분 이상 계속 (NFPC 107A 제11조)"},
+        {id:"gasdmp",note:"약제 유출 방지를 위한 구역 밀폐"},
+        {id:"gasrel",note:"지연시간 경과 후 방출 — 이후 중단 불가"}]};
+    case "ps":
+      return {lv:2,alarm:false,list:[
+        {id:"avs",note:"헤드 개방에 따른 유수검지 — 알람밸브 개방표시등 점등"},
+        {id:"sir",note:"유수검지장치 발신에 따른 음향장치 경보 (NFPC 103 제9조)"},
+        {id:"recv",note:"수신기 밸브개방 신호 수신"},
+        {id:"pump",note:"압력 저하에 따른 기동"},
+        {id:"bell",note:"지구경종 동반 여부 확인 필요",vq:1}]};
+    case "gas":
+      return {lv:2,alarm:false,list:[
+        {id:"gasind",note:"가스누설 표시 및 경보부저"},
+        {id:"pag",note:"해당 구역 안내방송",vq:1}]};
+  }
+  return {lv:0,list:[],alarm:false};
+}
+
+/* ---------- 음향송출줄 ----------
+   자동 송출 : 주경종(mbell) · 지구경종(bell) · 싸이렌(sir) · 비상방송(pag)
+              비상방송(화재시)은 audio/pa-fire.* (싸이렌 5초+멘트+싸이렌 5초)을 반복 송출한다.
+              연동정지가 걸린 설비는 live[]에서 빠지므로 그대로 송출이 멈춘다.
+   수동 송출 : 비화재 안내 / 비화재보 복구안내 / 화재시 안내 — [송출] 버튼으로만 재생.
+   음원 교체 : audio/ 폴더의 같은 이름 파일을 바꾸면 그대로 반영된다.
+               (bell=주경종·지구경종, siren=싸이렌, pa-fire=화재시 안내방송)
+   iOS 대응 : iOS Safari는 audio.volume 설정을 무시하므로 Web Audio GainNode를 거쳐
+              음량을 제어한다. Web Audio를 못 쓰는 환경에서는 element.volume으로 자동 대체. */
+let soundOn=true, volume=0.45;
+const bellAudio=document.getElementById("bellAudio");
+const sirenAudio=document.getElementById("sirenAudio");
+const paAudio=document.getElementById("paAudio");
+const paSiren=document.getElementById("paSiren");
+const MEDIA=[bellAudio,sirenAudio,paAudio,paSiren].filter(Boolean);
+
+/* 화재시 안내방송은 다른 두 방송과 구분되도록 음량을 조금 높인다 */
+const FIRE_GAIN=1.15;
+let curLoud=false;
+const gain=loud=>Math.min(1,volume*(loud?FIRE_GAIN:1));
+
+/* --- Web Audio 라우팅 (iOS 음량 제어용) --- */
+let AC=null, webAudioOK=false;
+const NODE=new Map();          /* audio element -> GainNode */
+function buildGraph(){
+  if(AC) return;
+  const C=window.AudioContext||window.webkitAudioContext;
+  if(!C) return;
+  try{
+    AC=new C();
+    MEDIA.forEach(a=>{
+      const src=AC.createMediaElementSource(a);
+      const g=AC.createGain();
+      g.gain.value=a===paAudio?gain(true):volume;
+      src.connect(g); g.connect(AC.destination);
+      NODE.set(a,g);
+      a.volume=1;              /* 실제 음량은 GainNode가 결정 */
+    });
+    webAudioOK=true;
+  }catch(e){ webAudioOK=false; }
+}
+function setVol(a,v){
+  const g=NODE.get(a);
+  if(webAudioOK&&g){ g.gain.value=v; }
+  else { try{ a.volume=v; }catch(e){} }
+}
+function applyVolumes(){
+  setVol(bellAudio,volume); setVol(sirenAudio,volume);
+  setVol(paAudio,gain(true)); setVol(paSiren,gain(true));
+}
+MEDIA.forEach(a=>{ try{ a.volume=volume; }catch(e){} });
+
+/* --- 오디오 언락 --------------------------------------------------------
+   브라우저는 사용자가 페이지를 직접 조작하기 전에는 소리 재생을 막는다.
+   슬라이더 드래그(input 이벤트)는 일부 브라우저(특히 Safari)에서 허용 제스처로
+   인정되지 않으므로, 최초의 click·touchend·keydown에서 모든 음원을 한 번씩
+   무음 재생→즉시 정지시켜 재생 권한을 미리 확보한다. */
+let unlocked=false;
+function unlockAudio(){
+  if(unlocked) return; unlocked=true;
+  buildGraph();
+  if(AC&&AC.state==="suspended"){ AC.resume().catch(()=>{}); }
+  MEDIA.forEach(a=>{
+    const wasMuted=a.muted;
+    a.muted=true;
+    const p=a.play();
+    if(p&&p.then) p.then(()=>{ a.pause(); a.currentTime=0; a.muted=wasMuted; })
+                   .catch(()=>{ a.muted=wasMuted; });
+    else { try{a.pause();a.currentTime=0;}catch(e){} a.muted=wasMuted; }
+  });
+  applyVolumes();
+  ["click","touchend","keydown"].forEach(ev=>document.removeEventListener(ev,unlockAudio,true));
+}
+["click","touchend","keydown"].forEach(ev=>document.addEventListener(ev,unlockAudio,true));
+
+/* 연동 출력에 따라 자동으로 울리는 음향 — 해당 설비에 연동정지가 걸리면 송출이 멈춘다 */
+function ring(a,on){
+  if(!a) return;
+  if(on&&soundOn){
+    if(AC&&AC.state==="suspended") AC.resume().catch(()=>{});
+    const p=a.play(); if(p&&p.catch) p.catch(()=>{});
+  }else{
+    try{ a.pause(); if(!on) a.currentTime=0; }catch(e){}
+  }
+}
+
+/* 비화재 안내·비화재보 복구안내는 실제 녹음이 없어 음성합성으로 낭독한다.
+   녹음 파일을 쓰려면 아래에 audio/ 경로를 넣으면 그 파일이 대신 재생된다. */
+const ANNOUNCE_FILES={ nonfire:"", recover:"" };   /* 예: nonfire:"audio/pa-nonfire.mp3" */
+let extAudio=null, paActive=false, paTimer=null, paBroken=false;
+
+function floorKo(f){ return f[0]==="B" ? "지하 "+f.slice(1)+"층" : "지상 "+parseInt(f)+"층"; }
+function scriptText(f,d,type){
+  const loc=floorKo(f)+" "+d+"동";
+  if(type==="nonfire"){
+    return "안내 말씀드립니다. 현재 "+loc+"에서 화재감지기가 동작하여 확인 중입니다. "+
+           "화재로 확정되지 않았으니 잠시만 기다려 주시고, 안내방송에 따라 행동하여 주시기 바랍니다.";
+  }
+  if(type==="recover"){
+    return "안내 말씀드립니다. 조금 전 "+loc+"에서 발생한 경보는 확인 결과 비화재보로 판명되어 "+
+           "정상으로 복구되었습니다. 이용에 불편을 드려 죄송합니다. 안심하시고 정상적인 활동을 계속하여 주시기 바랍니다.";
+  }
+  return "화재발생, 화재발생. 현재 "+loc+"에서 화재가 발생하였습니다. "+
+         "엘리베이터를 이용하지 마시고, 가까운 비상구와 계단을 이용하여 "+
+         "안전한 장소로 신속히 대피하여 주시기 바랍니다.";
+}
+/* 합성 음성은 한국어 남성 목소리를 우선 선택하고, 없으면 톤을 낮춰 대체한다 */
+const MALE_HINT=/male|man\b|injoon|인준|민준|준서|시우|ko-kr-x-kod|ko-kr-x-kob|jinho/i;
+const FEMALE_HINT=/female|woman|yuna|유나|수진|지은|ko-kr-x-koc/i;
+function pickKoVoice(){
+  if(!("speechSynthesis" in window)) return null;
+  const vs=(window.speechSynthesis.getVoices()||[]).filter(v=>v.lang&&v.lang.toLowerCase().indexOf("ko")===0);
+  if(!vs.length) return null;
+  const male=vs.find(v=>MALE_HINT.test(v.name));
+  if(male) return {voice:male,pitch:1.0};
+  const notFemale=vs.find(v=>!FEMALE_HINT.test(v.name));
+  return {voice:(notFemale||vs[0]),pitch:0.72};
+}
+function speak(text,onend,loud){
+  curLoud=!!loud;
+  if(!soundOn||!("speechSynthesis" in window)){ if(onend) onend(); return; }
+  try{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang="ko-KR"; u.rate=0.97; u.volume=Math.min(1,gain(loud)*1.9);
+    const p=pickKoVoice();
+    if(p){ u.voice=p.voice; u.pitch=p.pitch; }
+    if(onend) u.onend=onend;
+    window.speechSynthesis.speak(u);
+  }catch(e){ if(onend) onend(); }
+}
+/* 외부 녹음 파일(비화재·복구용)이 지정된 경우 재생 */
+function playExtFile(src,onend,loud){
+  curLoud=!!loud;
+  if(!extAudio){ extAudio=new Audio(); extAudio.setAttribute("playsinline",""); }
+  if(extAudio.src!==src){ extAudio.src=src; }
+  try{ extAudio.volume=gain(loud); }catch(e){}
+  extAudio.currentTime=0;
+  extAudio.onended=onend||null;
+  const p=extAudio.play(); if(p&&p.catch) p.catch(()=>{ if(onend) onend(); });
+}
+function sayScript(type,onend){
+  const src=ANNOUNCE_FILES[type];
+  if(src) playExtFile(src,onend,false); else speak(scriptText(st.f,st.d,type),onend,false);
+}
+/* 화재시 안내방송 — audio/pa-fire.* 를 높은 음량으로 재생.
+   파일을 못 읽으면 짧은 싸이렌 + 음성합성 낭독으로 자동 대체한다. */
+function playFire(onend){
+  if(!paBroken&&paAudio){
+    if(AC&&AC.state==="suspended") AC.resume().catch(()=>{});
+    setVol(paAudio,gain(true));
+    try{ paAudio.currentTime=0; }catch(e){}
+    paAudio.onended=onend||null;
+    const p=paAudio.play();
+    if(p&&p.catch) p.catch(()=>{ paBroken=true; fireFallback(onend); });
+    return;
+  }
+  fireFallback(onend);
+}
+function fireFallback(onend){
+  const go=()=>speak(scriptText(st.f,st.d,"fire"),onend,true);
+  if(!paSiren){ go(); return; }
+  setVol(paSiren,gain(true));
+  paSiren.onended=()=>{ paSiren.onended=null; go(); };
+  try{ paSiren.currentTime=0; }catch(e){}
+  const p=paSiren.play();
+  if(p&&p.catch) p.catch(()=>{ paSiren.onended=null; go(); });
+}
+function playAnnounce(type){
+  paStop();
+  if(type==="fire") playFire(); else sayScript(type);
+}
+/* 비상방송 자동송출 — 연동이 살아있는 동안 반복 */
+function paStart(){ if(paActive) return; paActive=true; paCycle(); }
+function paCycle(){
+  if(!paActive||!soundOn) return;
+  playFire(()=>{ if(paActive) paTimer=setTimeout(paCycle,2600); });
+}
+function paStop(){
+  paActive=false;
+  if(paTimer){ clearTimeout(paTimer); paTimer=null; }
+  [paAudio,paSiren].forEach(a=>{ if(a){ a.onended=null; try{a.pause();a.currentTime=0;}catch(e){} } });
+  if(extAudio){ extAudio.onended=null; try{extAudio.pause();}catch(e){} }
+  if("speechSynthesis" in window){ try{window.speechSynthesis.cancel();}catch(e){} }
+}
+if("speechSynthesis" in window){ window.speechSynthesis.onvoiceschanged=()=>{}; }
+
+function silence(){
+  ring(bellAudio,false); ring(sirenAudio,false);
+  paStop();
+}
+
+/* 출력 목록에서 실제 동작 중인 음향설비를 읽어 재생 상태를 맞춘다.
+   live[] 에는 연동정지가 걸린 설비가 들어오지 않으므로, 연동정지를 잡으면 그대로 송출이 멈춘다.
+   안내방송 3종은 자동 재생하지 않고 음향송출줄의 [송출] 버튼으로만 내보낸다. */
+function syncAudio(live){
+  if(!soundOn){ silence(); return; }
+  const sirOn=live.indexOf("sir")>=0;
+  /* 싸이렌(유수검지장치·가스계 연동) 구동 시 지구경종도 함께 명동 */
+  ring(bellAudio,  live.indexOf("mbell")>=0 || live.indexOf("bell")>=0 || sirOn);
+  ring(sirenAudio, sirOn);
+  live.indexOf("pag")>=0 ? paStart() : paStop();
+}
+/* ---------- 상태 ---------- */
+let st={f:"B1",d:"C",input:"smk",val:0,fired:false};
+/* halted = 연동정지 걸린 설비. 기본값은 비어 있음 = 전 설비 정상 */
+let halted=new Set(), revealed=Infinity, timer=null;
+const $=s=>document.querySelector(s);
+
+const stack=$("#stack");
+FLOORS.forEach(f=>{
+  const r=document.createElement("div");r.className="frow";
+  const l=document.createElement("div");l.className="flab";l.textContent=f;r.appendChild(l);
+  DONGS.forEach(d=>{
+    const b=document.createElement("button");b.className="cell";b.dataset.k=f+d;
+    b.setAttribute("aria-label",f+" "+d+"동");
+    b.addEventListener("click",()=>{st.f=f;st.d=d;resetInput();render();});
+    r.appendChild(b);
+  });
+  stack.appendChild(r);
+});
+
+const inlist=$("#inlist");
+let lastG=null;
+INPUTS.forEach(I=>{
+  if(I.g!==lastG){
+    const h=document.createElement("div");h.className="ingrp";h.textContent=I.g;
+    inlist.appendChild(h);
+    const wrap=document.createElement("div");wrap.className="inlist";wrap.dataset.g=I.g;
+    inlist.appendChild(wrap);
+    lastG=I.g;
+  }
+  const wrap=inlist.querySelector('.inlist[data-g="'+I.g+'"]');
+  const b=document.createElement("button");
+  b.dataset.id=I.id;b.setAttribute("aria-pressed","false");
+  b.innerHTML='<span>'+I.name+'</span><span class="kind">'+I.kind+'</span>';
+  b.addEventListener("click",()=>{ if(!avail(I,st.f,st.d))return; st.input=I.id;resetInput();render(); });
+  wrap.appendChild(b);
+});
+
+const cfg=$("#cfg");
+ALL.forEach(id=>{
+  if(id==="dren"||id==="drenz") return;              // 프리액션 버튼에 묶임
+  if(OUT[id].fixed) return;                          // 수신기 표시등 계통 — 연동정지 대상 아님
+  const l=document.createElement("label");
+  const isKey=KEY4.includes(id);
+  if(isKey) l.className="k";
+  const label = id==="preact" ? "프리액션 · 드렌처 (버튼 공통)" : OUT[id].n;
+  l.innerHTML='<input type="checkbox" data-id="'+id+'"><span>'+label+'</span>';
+  cfg.appendChild(l);
+});
+cfg.addEventListener("change",e=>{
+  if(!e.target.matches("input"))return;
+  const id=e.target.dataset.id;
+  const ids = id==="preact" ? PD_GROUP : [id];
+  /* 체크 = 연동정지를 잡는다 */
+  ids.forEach(x=> e.target.checked ? halted.add(x) : halted.delete(x));
+  setMode("custom",true);render();
+});
+
+function resetInput(){
+  let I=INPUTS.find(x=>x.id===st.input);
+  if(!I||!avail(I,st.f,st.d)){ st.input="smk"; I=INPUTS[0]; }
+  st.val=I.mode==="analog"?I.init:0; st.fired=false; revealed=Infinity; stop();
+}
+
+function render(){
+  const I=INPUTS.find(x=>x.id===st.input);
+  const R=compute(st);
+  const u=useOf(st.f);
+
+  $("#here").innerHTML="<b>"+st.f+" · "+st.d+"동</b><small>"+USE_KO[u]+"</small>";
+  document.querySelectorAll("#inlist button").forEach(b=>{
+    const J=INPUTS.find(x=>x.id===b.dataset.id);
+    const ok=avail(J,st.f,st.d);
+    b.setAttribute("aria-pressed", b.dataset.id===st.input);
+    b.classList.toggle("na",!ok);
+    b.disabled=!ok;
+    b.title = ok?"설치: "+J.where:"이 위치에는 미설치 — 설치 위치: "+J.where;
+    b.querySelector(".kind").textContent = ok?J.kind:"미설치";
+  });
+
+  const op=$("#opbox");
+  const wl='<p class="wline">설치 위치 · '+I.where+'</p>';
+  if(I.mode==="analog"){
+    const pct=v=>((v-I.min)/(I.max-I.min)*100);
+    op.innerHTML=wl+'<div class="gauge"><div class="rowtop"><span class="nm">'+I.name+' 측정값</span>'+
+      '<span class="val num">'+st.val.toFixed(I.step<1?1:0)+'<span style="font-size:13px">'+I.unit+'</span></span></div>'+
+      '<div class="track">'+
+      '<div class="band b1" style="left:'+pct(I.pre)+'%;width:'+(pct(I.fire)-pct(I.pre))+'%"></div>'+
+      '<div class="band b2" style="left:'+pct(I.fire)+'%;width:'+(100-pct(I.fire))+'%"></div>'+
+      '<div class="tick t1" style="left:'+pct(I.pre)+'%"><span>'+I.pre+' 예비</span></div>'+
+      '<div class="tick t2" style="left:'+pct(I.fire)+'%"><span>'+I.fire+' 화재</span></div>'+
+      '<div class="needle" style="left:'+pct(st.val)+'%"></div></div>'+
+      '<input type="range" id="rng" min="'+I.min+'" max="'+I.max+'" step="'+I.step+'" value="'+st.val+'" aria-label="측정값"></div>'+
+      (I.desc?'<p class="bigdesc" style="margin-top:10px">'+I.desc+'</p>':'');
+    $("#rng").addEventListener("input",e=>{st.val=+e.target.value;revealed=Infinity;stop();render();});
+  }else{
+    op.innerHTML=wl+'<p class="bigdesc">'+I.desc+'</p>'+
+      '<button class="bigbtn" id="fire" aria-pressed="'+st.fired+'">'+(st.fired?"동작 중 — 누르면 복구":"동작시키기")+'</button>';
+    $("#fire").addEventListener("click",()=>{st.fired=!st.fired;revealed=Infinity;stop();render();});
+  }
+
+  const v=$("#verdict");
+  v.className="verdict "+(R.lv===2?"s-fire":R.lv===1?"s-pre":"");
+  if(R.lv===0){
+    $("#vtext").textContent=I.mode==="analog"?"정상 감시":"대기";
+    $("#vnote").textContent=I.mode==="analog"
+      ?"임계값 미만입니다. 수신기는 감시상태를 유지하며 출력 연동은 없습니다."
+      :"입력설비를 동작시키면 출력 연동이 표시됩니다.";
+  }else if(R.lv===1){
+    $("#vtext").textContent="예비경보";
+    $("#vnote").textContent="수신기에 예비경보가 표시되고 주경종이 단독으로 명동합니다. 지구경종·비상방송·설비 연동은 아직 없습니다. 화재점까지 "+
+      (I.unit==="%"?"2%p":"20℃")+" 남았습니다. 이 구간에서 현장을 확인하면 연동 전에 상황을 종료할 수 있습니다.";
+  }else{
+    $("#vtext").textContent=R.alarm?"화재신호 성립":"설비 동작";
+    $("#vnote").textContent=R.alarm
+      ?(I.mode==="binary"?"예비경보 구간 없이 즉시 화재신호가 성립했습니다. 확인할 시간 없이 연동이 출력됩니다."
+                         :"연동 출력이 개시됩니다. 복구 조작으로만 해제됩니다.")
+      :"자동화재탐지 화재경보와는 별개로 해당 설비 계통만 동작합니다.";
+  }
+
+  const cells=(R.lv>0&&R.alarm)?alarmCells(st.f,st.d):[];
+  const shtCells=(R.sht&&R.lv===2)?R.sht.cells:[];
+  const origin=st.f+st.d;
+  document.querySelectorAll(".cell").forEach(c=>{
+    c.className="cell";
+    const k=c.dataset.k;
+    if(cells.includes(k)&&k!==origin) c.classList.add(R.lv===2?"alarm":"prealarm");
+    if(shtCells.includes(k)) c.classList.add("sht");
+    if(k===origin) c.classList.add((R.lv===2&&R.alarm)?"origin":"sel");
+  });
+
+  let sc = R.alarm ? "경보 출력범위: <b>"+scopeText(st.f,st.d)+"</b>"
+        : (R.lv===2 ? "자탐 경보 출력 없음 — 해당 설비 계통만 동작합니다."
+                    : "화재신호 성립 시 출력범위: <b>"+scopeText(st.f,st.d)+"</b>");
+  if(R.sht&&R.lv===2) sc += '<span class="shtline">방화셔터 출력범위: '+R.sht.label+'</span>';
+  $("#scope").innerHTML=sc;
+
+  const list=$("#out");list.innerHTML="";
+  const live=[];
+  if(!R.list.length){
+    const li=document.createElement("li");li.className="empty";
+    li.textContent=R.lv===1?"예비경보 단계 — 출력 연동 없음":"입력설비 동작 시 출력 연동이 표시됩니다.";
+    list.appendChild(li);
+  }else{
+    R.list.forEach((o,i)=>{
+      const D=OUT[o.id];
+      const isHalted=halted.has(o.id)&&!D.fixed;
+      const li=document.createElement("li");
+      li.classList.add(isHalted?"off":"on");
+      if(KEY4.includes(o.id)) li.classList.add("key4");
+      if(i>=revealed) li.classList.add("pending");
+      li.innerHTML='<span class="led"></span>'+
+        '<span class="stepno">'+String(i+1).padStart(2,"0")+'</span>'+
+        '<span class="dev">'+D.n+
+          (KEY4.includes(o.id)?'<span class="k4">검토대상</span>':'')+
+          (o.vq?'<span class="vq" title="연동 규칙 확인 필요">확인요</span>':'')+
+          (o.note?'<small>'+o.note+'</small>':'')+'</span>'+
+        '<span class="tag">'+(isHalted?"연동정지":"동작")+'</span>';
+      list.appendChild(li);
+      if(!isHalted && i<revealed) live.push(o.id);
+    });
+  }
+  syncAudio(live);
+}
+
+function setMode(m,silent){
+  document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
+  if(!silent){
+    if(m==="normal") halted=new Set();
+    if(m==="night")  halted=new Set(HALT_NIGHT);
+  }
+  document.querySelectorAll("#cfg input").forEach(i=>i.checked=halted.has(i.dataset.id));
+}
+document.querySelectorAll(".modes button").forEach(b=>b.addEventListener("click",()=>{setMode(b.dataset.mode);render();}));
+
+/* 음향 컨트롤 */
+$("#sndBtn").addEventListener("click",()=>{
+  soundOn=!soundOn;
+  const b=$("#sndBtn");
+  b.setAttribute("aria-pressed",soundOn);
+  b.textContent = soundOn ? "🔊 음향 켜짐" : "🔇 음향 꺼짐";
+  if(!soundOn) silence();
+  render();
+});
+$("#vol").addEventListener("input",e=>{
+  volume=(+e.target.value)/100;
+  applyVolumes();
+  if(extAudio){ try{ extAudio.volume=gain(curLoud); }catch(err){} }
+});
+$("#broadcastBtn").addEventListener("click",()=>{
+  if(!soundOn) return;
+  playAnnounce($("#script").value);
+});
+$("#stopSnd").addEventListener("click",silence);
+/* 복구 — 수신기 화재신호를 화재발생 전 평상시 감시상태로 초기화 (연동정지 설정은 유지) */
+$("#recoverBtn").addEventListener("click",()=>{silence();resetInput();render();});
+
+function stop(){if(timer){clearInterval(timer);timer=null;}const p=$("#play");if(p){p.disabled=false;p.textContent="순차 재생";}}
+$("#play").addEventListener("click",()=>{
+  const n=compute(st).list.length; if(!n)return;
+  stop();revealed=0;render();
+  $("#play").disabled=true;$("#play").textContent="재생 중…";
+  timer=setInterval(()=>{revealed++;if(revealed>=n){revealed=n;render();stop();return;}render();},620);
+});
+$("#reset").addEventListener("click",()=>{silence();resetInput();render();});
+
+setMode("normal");resetInput();render();
+</script>
+</body>
+</html>
