@@ -24,7 +24,7 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
-        /* Print & PDF Specific Styles for Official A4 Report */
+        /* Print & PDF Specific Styles for Official A4 Multi-page Report */
         @media print {
             @page {
                 size: A4 portrait;
@@ -37,16 +37,29 @@
             header, .no-print, button, select, input, .group, #toast, #add-modal, #dash-modal, #pdf-modal, #del-confirm-modal { 
                 display: none !important; 
             }
-            body { 
+            /* Resolve Chrome/Edge Flex & Overflow Print Blank Bug */
+            html, body { 
                 background: #ffffff !important; 
                 color: #000000 !important; 
                 min-height: auto !important; 
-                font-size: 9pt !important; 
+                font-size: 8.5pt !important; 
+                display: block !important;
+                height: auto !important;
+                overflow: visible !important;
             }
             main { 
                 max-width: 100% !important; 
                 padding: 0 !important; 
                 margin: 0 !important; 
+                display: block !important;
+                overflow: visible !important;
+            }
+            #tab-dashboard, .space-y-6 {
+                display: block !important;
+                overflow: visible !important;
+            }
+            #tab-dashboard > * + * {
+                margin-top: 10px !important;
             }
             .bg-white, .bg-slate-900, .bg-slate-800 { 
                 background: #ffffff !important; 
@@ -60,24 +73,54 @@
             .print-header { 
                 display: block !important; 
                 border-bottom: 2px solid #0f172a; 
-                padding-bottom: 10px; 
-                margin-bottom: 14px; 
+                padding-bottom: 8px; 
+                margin-bottom: 12px; 
             }
             .print-break-avoid {
-                page-break-inside: avoid;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            /* Start Detailed Table clearly from Page 2 */
+            .print-page-break {
+                page-break-before: always !important;
+                break-before: page !important;
+                margin-top: 15px !important;
             }
             .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl { 
                 box-shadow: none !important; 
             }
+            /* Table Print Fix: Expand overflow & reset widths */
+            .overflow-x-auto {
+                overflow: visible !important;
+                display: block !important;
+                width: 100% !important;
+            }
             table { 
                 font-size: 8pt !important; 
                 width: 100% !important; 
+                min-width: 100% !important;
+                max-width: 100% !important;
                 border-collapse: collapse !important; 
+                table-layout: auto !important;
+                page-break-inside: auto !important;
+            }
+            thead {
+                display: table-header-group !important;
+            }
+            tbody {
+                display: table-row-group !important;
+            }
+            tr {
+                display: table-row !important;
+                page-break-inside: avoid !important;
+                page-break-after: auto !important;
             }
             th, td { 
                 border: 1px solid #94a3b8 !important; 
-                padding: 4px 5px !important; 
+                padding: 4px 4px !important; 
                 text-align: center !important;
+                white-space: normal !important;
+                word-break: break-all !important;
             }
             th { 
                 background-color: #f1f5f9 !important; 
@@ -85,7 +128,7 @@
                 font-weight: bold !important;
             }
             canvas { 
-                max-height: 160px !important; 
+                max-height: 150px !important; 
             }
             .grid { 
                 display: flex !important; 
@@ -108,28 +151,28 @@
                     <span class="px-2 py-0.5 bg-blue-100 text-blue-800 font-bold text-xs rounded border border-blue-300">소방방재 공식보고서</span>
                     <span class="text-xs text-slate-500" id="print-doc-id">문서번호: FIR-2026-ALL</span>
                 </div>
-                <h1 class="text-2xl font-extrabold text-slate-900 mt-1" id="print-doc-title">2026년 원그로브 소방시설 비화재보/고장/감시 이력관리 보고서</h1>
-                <p class="text-xs text-slate-600 mt-1" id="print-doc-subtitle">소방감지기 오동작(비화재보), 고장 및 감시 선로 복구 이력 현황</p>
+                <h1 class="text-xl font-extrabold text-slate-900 mt-1" id="print-doc-title">2026년 원그로브 소방시설 비화재보/고장/감시 이력관리 보고서</h1>
+                <p class="text-xs text-slate-600 mt-0.5" id="print-doc-subtitle">소방감지기 오동작(비화재보), 고장 및 감시 선로 복구 이력 현황</p>
             </div>
             
             <!-- Approval Sign-off Box -->
             <div class="flex border border-slate-500 text-center text-[10px] bg-white">
-                <div class="w-8 bg-slate-100 border-r border-slate-500 flex items-center justify-center font-bold text-slate-800 py-1">결<br>재</div>
+                <div class="w-7 bg-slate-100 border-r border-slate-500 flex items-center justify-center font-bold text-slate-800 py-1">결<br>재</div>
                 <div class="w-16 border-r border-slate-500">
                     <div class="border-b border-slate-400 py-0.5 bg-slate-50 font-semibold">담당</div>
-                    <div class="h-10 flex items-end justify-center pb-1 text-slate-400">인</div>
+                    <div class="h-9 flex items-end justify-center pb-0.5 text-slate-400">인</div>
                 </div>
                 <div class="w-16 border-r border-slate-500">
                     <div class="border-b border-slate-400 py-0.5 bg-slate-50 font-semibold">검토</div>
-                    <div class="h-10 flex items-end justify-center pb-1 text-slate-400">인</div>
+                    <div class="h-9 flex items-end justify-center pb-0.5 text-slate-400">인</div>
                 </div>
                 <div class="w-16">
                     <div class="border-b border-slate-400 py-0.5 bg-slate-50 font-semibold">승인</div>
-                    <div class="h-10 flex items-end justify-center pb-1 text-slate-400">인</div>
+                    <div class="h-9 flex items-end justify-center pb-0.5 text-slate-400">인</div>
                 </div>
             </div>
         </div>
-        <div class="flex justify-between items-center text-xs text-slate-600 mt-2.5 pt-2 border-t border-slate-200">
+        <div class="flex justify-between items-center text-xs text-slate-600 mt-2 pt-1.5 border-t border-slate-200">
             <p><strong>작성부서:</strong> <span id="print-doc-dept">종합방재실/소방파트</span> | <strong>보고대상:</strong> <span id="print-doc-target">A/B/C/D동 전 구역</span></p>
             <p><strong>출력일시:</strong> <span id="print-doc-date">2026.09.30</span></p>
         </div>
@@ -142,10 +185,8 @@
                 <div class="flex items-center space-x-3 min-w-0">
                     <div class="bg-blue-600 p-2.5 rounded-xl shadow-md text-white relative flex-shrink-0">
                         <i class="fa-solid fa-cloud-showers-water text-xl"></i>
-                        <!-- Firebase Live Indicator -->
                         <span id="firebase-indicator" class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-slate-900 hidden animate-pulse" title="Firebase 클라우드 실시간 연동 중"></span>
                     </div>
-                    <!-- Single-line title container without awkward line breaks -->
                     <div class="min-w-0">
                         <div class="flex items-center gap-2 flex-nowrap">
                             <h1 class="text-sm sm:text-base md:text-lg font-extrabold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis" id="header-dash-title">
@@ -164,7 +205,6 @@
 
             <!-- Action Controls -->
             <div class="flex items-center gap-2 w-full xl:w-auto justify-end flex-wrap flex-shrink-0">
-                <!-- Dashboard Selector Dropdown -->
                 <div class="relative inline-block text-left">
                     <select id="dash-selector" onchange="switchDashboard(this.value)" class="bg-slate-800 text-slate-100 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer max-w-[210px] text-ellipsis">
                         <!-- JS Populated -->
@@ -175,12 +215,10 @@
                     <i class="fa-solid fa-folder-plus"></i> 신규 대시보드
                 </button>
 
-                <!-- PDF Monthly Export Button -->
                 <button onclick="openPdfModal()" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs ring-2 ring-amber-400/40 whitespace-nowrap" title="기간별 공식 PDF 보고서 저장 및 인쇄">
                     <i class="fa-solid fa-file-pdf"></i> PDF 보고서 / 인쇄
                 </button>
 
-                <!-- Export Dropdown -->
                 <div class="relative group">
                     <button class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs whitespace-nowrap">
                         <i class="fa-solid fa-file-export"></i> 내보내기 <i class="fa-solid fa-chevron-down text-[10px]"></i>
@@ -224,7 +262,7 @@
 
         <div id="tab-dashboard" class="space-y-6">
             
-            <!-- Quick Period Filter Bar ('보고 기간선택'으로 명칭 및 옵션 재구성) -->
+            <!-- Quick Period Filter Bar -->
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3 no-print">
                 <div class="flex items-center gap-2.5">
                     <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
@@ -242,7 +280,7 @@
                 </div>
             </div>
 
-            <!-- KPI Cards -->
+            <!-- Page 1 Contents: KPI Cards & Charts -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print-break-avoid">
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex items-center justify-between">
                     <div>
@@ -250,7 +288,7 @@
                         <h3 class="text-3xl font-extrabold text-slate-800 mt-1" id="kpi-total">58건</h3>
                         <span class="inline-block mt-2 text-xs text-slate-500" id="kpi-period-label">올 해 전체 기간 기준</span>
                     </div>
-                    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 text-xl">
+                    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 text-xl flex-shrink-0">
                         <i class="fa-solid fa-list-check"></i>
                     </div>
                 </div>
@@ -261,7 +299,7 @@
                         <h3 class="text-3xl font-extrabold text-amber-600 mt-1" id="kpi-nonfire">0건</h3>
                         <span class="inline-block mt-2 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-semibold" id="kpi-nonfire-ratio">전체 중 0%</span>
                     </div>
-                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 text-xl">
+                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 text-xl flex-shrink-0">
                         <i class="fa-solid fa-bell-slash"></i>
                     </div>
                 </div>
@@ -272,24 +310,25 @@
                         <h3 class="text-3xl font-extrabold text-rose-600 mt-1" id="kpi-fault">0건</h3>
                         <span class="inline-block mt-2 text-xs text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md font-semibold">누수/침수 및 방풍실</span>
                     </div>
-                    <div class="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center text-rose-600 text-xl">
+                    <div class="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center text-rose-600 text-xl flex-shrink-0">
                         <i class="fa-solid fa-triangle-exclamation"></i>
                     </div>
                 </div>
 
+                <!-- Fix ①: 최다 발생 구역 C동 아래칸에 건수를 작고 보기 좋게 배치 -->
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-indigo-200 flex items-center justify-between">
-                    <div>
+                    <div class="min-w-0">
                         <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">최다 발생 구역</p>
-                        <h3 class="text-2xl font-extrabold text-indigo-700 mt-1" id="kpi-hotspot">-</h3>
-                        <span class="inline-block mt-2 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md font-semibold">주요 취약 동/구역</span>
+                        <h3 class="text-3xl font-extrabold text-indigo-700 mt-1" id="kpi-hotspot-bld">C동</h3>
+                        <span class="inline-block mt-2 text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md font-semibold whitespace-nowrap" id="kpi-hotspot-cnt">누적 18건 발생</span>
                     </div>
-                    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 text-xl">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 text-xl flex-shrink-0">
                         <i class="fa-solid fa-building-circle-exclamation"></i>
                     </div>
                 </div>
             </div>
 
-            <!-- Charts Section -->
+            <!-- Charts Section (Page 1 in print) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 print-break-avoid">
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 lg:col-span-2">
                     <div class="flex justify-between items-center mb-4">
@@ -315,8 +354,8 @@
                 </div>
             </div>
 
-            <!-- Detailed History List Table (Default: 최근 10개 표시) -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+            <!-- Detailed History List Table (Fix ②: print-page-break 적용하여 인쇄 시 2페이지 첫 줄부터 시작) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4 print-page-break">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-slate-100">
                     <div>
                         <div class="flex items-center gap-2.5">
@@ -331,7 +370,7 @@
                     </div>
                     
                     <!-- Filters and Limit Select -->
-                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto no-print">
                         <div class="relative flex-1 sm:w-56">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                             <input type="text" id="search-input" oninput="renderTable()" placeholder="장소, 내역, Address 검색..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -357,6 +396,7 @@
                     </div>
                 </div>
 
+                <!-- Fix ③: overflow-x-auto & table-layout for print display bug -->
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-xs text-left text-slate-600 min-w-[1150px]">
                         <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
@@ -380,7 +420,7 @@
                 </div>
 
                 <!-- Footer counter & Expand notice -->
-                <div class="flex flex-col sm:flex-row justify-between items-center pt-2 text-xs text-slate-500 gap-2">
+                <div class="flex flex-col sm:flex-row justify-between items-center pt-2 text-xs text-slate-500 gap-2 no-print">
                     <span id="table-footer-info">총 58건 중 최근 10개 항목 표시 중</span>
                     <button id="toggle-expand-btn" onclick="toggleAllRows()" class="text-blue-600 hover:text-blue-800 font-bold hover:underline flex items-center gap-1">
                         <span>전체 항목 모두보기</span> <i class="fa-solid fa-chevron-down text-[10px]"></i>
@@ -848,7 +888,7 @@
         
         // 기간 필터 기본값: 'ALL' (올 해 전체 58건)
         let selectedPeriodFilter = "ALL";
-        // 테이블 목록 표시 제한 기본값: 10 (최근 10개만 보기)
+        // 테이블 목록 표시 제한 기본값: 10 (첫 화면: 최근 10개만 보기)
         let rowDisplayLimit = 10;
 
         window.onload = function() {
@@ -918,7 +958,6 @@
                 const saved = localStorage.getItem('fire_dashboards_v2');
                 if (saved) {
                     dashboards = JSON.parse(saved);
-                    // 58건 마스터 데이터가 없거나 50건 미만인 구버전 캐시 자동 교체/보정
                     const masterIdx = dashboards.findIndex(d => d.logs && d.logs.length >= 50);
                     if (masterIdx === -1) {
                         dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
@@ -964,7 +1003,6 @@
             activeDashId = cur.id;
             detectorLogs = cur.logs || [];
 
-            // Single line clean master title
             document.getElementById('header-dash-title').innerText = "2026년 소방시설 비화재보/고장/감시 이력관리";
             document.getElementById('header-dash-period').innerText = cur.period || "2026.07.01 ~ 09.30";
             document.getElementById('header-dash-desc').innerText = cur.desc || "비화재보/감시/고장 발생 수신기 모니터링";
@@ -1002,7 +1040,7 @@
             showToast("관제 대시보드가 전환되었습니다.");
         }
 
-        // Helper: Extract numeric month (7, 8, 9) from "9/28"
+        // Helper: Extract numeric month from date string
         function getItemMonth(item) {
             if (!item || !item.date) return 0;
             const parts = item.date.split('/');
@@ -1021,13 +1059,11 @@
             return null;
         }
 
-        // '보고 기간선택' 드롭다운 옵션 빌드: 올 해 -> 최근 30일 -> 9월 -> 8월 -> 7월
         function populatePeriodFilterOptions() {
             const periodSelect = document.getElementById('filter-period');
             if (!periodSelect) return;
 
-            // '최근 30일' 건수 계산: 2026년 9월 30일 기준 30일 전인 9월 1일 이후
-            const cutoffDate = new Date(2026, 8, 1); // 9월 1일
+            const cutoffDate = new Date(2026, 8, 1);
             const d30Count = detectorLogs.filter(item => {
                 const dt = getItemDateObj(item);
                 return dt && dt >= cutoffDate;
@@ -1048,6 +1084,7 @@
             periodSelect.innerHTML = html;
         }
 
+        // [수정] 첫페이지만 최근 10개 보여주고, 특정 월이나 기간에서는 전체 내용이 다 보여지게 구성
         function handlePeriodChange() {
             const periodSelect = document.getElementById('filter-period');
             if (periodSelect) {
@@ -1056,19 +1093,25 @@
             
             const badge = document.getElementById('period-summary-badge');
             const kpiLabel = document.getElementById('kpi-period-label');
+            const limitSelect = document.getElementById('filter-row-limit');
             const scoped = getScopedLogs();
 
-            if (badge) {
-                if (selectedPeriodFilter === 'ALL') {
-                    badge.innerText = `올 해 2026년 전체 누적 ${scoped.length}건 조회 중`;
-                    if (kpiLabel) kpiLabel.innerText = "2026년 누적 기준";
-                } else if (selectedPeriodFilter === 'D30') {
-                    badge.innerText = `최근 30일 집계 (${scoped.length}건)`;
-                    if (kpiLabel) kpiLabel.innerText = "최근 30일 기준";
-                } else {
-                    badge.innerText = `2026년 ${selectedPeriodFilter}월 집계 (${scoped.length}건)`;
-                    if (kpiLabel) kpiLabel.innerText = `2026년 ${selectedPeriodFilter}월 기준`;
-                }
+            // 첫페이지(올 해 전체)일 때만 최근 10개, 월이나 기간 선택 시 전체 보여주기
+            if (selectedPeriodFilter === 'ALL') {
+                rowDisplayLimit = 10;
+                if (limitSelect) limitSelect.value = '10';
+                if (badge) badge.innerText = `올 해 2026년 전체 누적 ${scoped.length}건 조회 중`;
+                if (kpiLabel) kpiLabel.innerText = "2026년 누적 기준";
+            } else if (selectedPeriodFilter === 'D30') {
+                rowDisplayLimit = 99999;
+                if (limitSelect) limitSelect.value = 'ALL';
+                if (badge) badge.innerText = `최근 30일 집계 (${scoped.length}건 전체 표시)`;
+                if (kpiLabel) kpiLabel.innerText = "최근 30일 기준";
+            } else {
+                rowDisplayLimit = 99999;
+                if (limitSelect) limitSelect.value = 'ALL';
+                if (badge) badge.innerText = `2026년 ${selectedPeriodFilter}월 집계 (${scoped.length}건 전체 표시)`;
+                if (kpiLabel) kpiLabel.innerText = `2026년 ${selectedPeriodFilter}월 기준`;
             }
 
             renderTable();
@@ -1076,19 +1119,17 @@
             updateCharts();
         }
 
-        // 선택된 '보고 기간'에 따른 데이터 필터링
         function getScopedLogs() {
             if (selectedPeriodFilter === "ALL") {
                 return detectorLogs;
             }
             if (selectedPeriodFilter === "D30") {
-                const cutoff = new Date(2026, 8, 1); // 9월 1일 이후
+                const cutoff = new Date(2026, 8, 1);
                 return detectorLogs.filter(item => {
                     const dt = getItemDateObj(item);
                     return dt && dt >= cutoff;
                 });
             }
-            // 월별 선택 (9, 8, 7)
             const targetMonth = parseInt(selectedPeriodFilter, 10);
             return detectorLogs.filter(item => getItemMonth(item) === targetMonth);
         }
@@ -1156,6 +1197,7 @@
             }
         }
 
+        // [수정] PDF 출력 시 인쇄물에 모든 데이터 행이 누락 없이 깔끔하게 나오도록 보장
         function executePdfPrint() {
             const pdfInput = document.getElementById('pdf-filename-input');
             let customName = pdfInput ? pdfInput.value.trim() : '';
@@ -1189,14 +1231,22 @@
             if (printDateEl) printDateEl.innerText = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
             const originalTitle = document.title;
-            document.title = customName;
+            const originalLimit = rowDisplayLimit;
 
+            // [핵심] 인쇄할 때는 항상 전체 이력 목록이 누락 없이 인쇄되도록 일시 해제
+            rowDisplayLimit = 99999;
+            renderTable();
+
+            document.title = customName;
             showToast(`PDF 파일명 '${customName}.pdf' 설정으로 인쇄/저장창을 엽니다.`);
 
             setTimeout(() => {
                 window.print();
                 setTimeout(() => {
                     document.title = originalTitle;
+                    // 인쇄 후 원래 화면의 10개 표시 상태로 원복
+                    rowDisplayLimit = originalLimit;
+                    renderTable();
                 }, 1000);
             }, 300);
         }
@@ -1222,10 +1272,8 @@
                 return typeof item.id === 'number' ? item.id : 0;
             };
 
-            // 1. 기간 스코프 적용
             const scoped = getScopedLogs();
 
-            // 2. 최신 날짜순 정렬
             const sortedLogs = [...scoped].sort((a, b) => {
                 const scoreA = parseLogDate(a);
                 const scoreB = parseLogDate(b);
@@ -1233,7 +1281,6 @@
                 return (b.id || 0) - (a.id || 0);
             });
 
-            // 3. 검색 및 상세 필터 적용
             const filtered = sortedLogs.filter(item => {
                 const matchSearch = (item.desc || '').toLowerCase().includes(search) || 
                                     (item.location || '').toLowerCase().includes(search) || 
@@ -1245,10 +1292,8 @@
                 return matchSearch && matchBuilding && matchType;
             });
 
-            // 4. 최근 10개 표시 제한 적용 (요구사항: 최근 10개 항목 리스트로 보여주기)
             const displayed = filtered.slice(0, rowDisplayLimit);
 
-            // 상태 뱃지 및 하단 정보 업데이트
             const badgeEl = document.getElementById('table-display-badge');
             const footerInfoEl = document.getElementById('table-footer-info');
             const expandBtn = document.getElementById('toggle-expand-btn');
@@ -1397,6 +1442,7 @@
             }
         }
 
+        // [수정] 최다 발생 구역 C동 아래칸에 건수를 작은 폰트로 예쁘게 표시
         function updateKPIs() {
             const currentScope = getScopedLogs();
             const total = currentScope.length;
@@ -1425,7 +1471,10 @@
             document.getElementById('kpi-nonfire').innerText = `${nonfire}건`;
             document.getElementById('kpi-nonfire-ratio').innerText = `전체 중 ${ratio}%`;
             document.getElementById('kpi-fault').innerText = `${fault}건`;
-            document.getElementById('kpi-hotspot').innerText = maxBuilding !== '-' ? `${maxBuilding}동 (${maxCount}건)` : '-';
+            
+            // ①번 수정: C동과 건수를 상하로 분리
+            document.getElementById('kpi-hotspot-bld').innerText = maxBuilding !== '-' ? `${maxBuilding}동` : '-';
+            document.getElementById('kpi-hotspot-cnt').innerText = maxBuilding !== '-' ? `누적 ${maxCount}건 발생` : '발생 없음';
         }
 
         function openAddModal() {
