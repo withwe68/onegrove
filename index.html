@@ -24,6 +24,32 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
+        /* 현장 분석 요약 (데이터 자동 분석) */
+        .an-wrap { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:16px; font-size:12px; color:#1e293b; }
+        .an-head { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:4px 8px; border-bottom:2px solid #0f172a; padding-bottom:6px; margin-bottom:10px; }
+        .an-head h2 { font-size:15px; font-weight:800; margin:0; }
+        .an-head span { font-size:11px; color:#64748b; }
+        .an-sum { background:#f8fafc; border-left:4px solid #2563eb; padding:8px 10px; margin-bottom:10px; line-height:1.6; }
+        .an-cols { display:flex; flex-wrap:wrap; gap:10px; }
+        .an-col { flex:1 1 300px; min-width:0; }
+        .an-col h3 { font-size:12px; font-weight:800; margin:0 0 6px; }
+        .an-tbl { width:100%; border-collapse:collapse; font-size:11px; }
+        .an-tbl th, .an-tbl td { border:1px solid #cbd5e1; padding:4px 6px; vertical-align:top; text-align:left; }
+        .an-tbl th { background:#f1f5f9; white-space:nowrap; }
+        .an-tbl td.c { text-align:center; white-space:nowrap; }
+        .an-bar { display:inline-block; height:7px; background:#f59e0b; border-radius:3px; vertical-align:middle; margin-right:4px; }
+        .an-red { color:#b91c1c; font-weight:800; }
+        .an-sub { color:#64748b; }
+        .an-note { font-size:10.5px; color:#64748b; margin-top:6px; }
+        @media print {
+            .an-wrap { border:1px solid #94a3b8 !important; border-radius:6px; padding:8px 10px; font-size:8.5pt; }
+            .an-tbl { font-size:7.8pt !important; }
+            .an-tbl th, .an-tbl td { border:1px solid #94a3b8 !important; padding:3px 4px !important; text-align:left !important; }
+            .an-tbl td.c { text-align:center !important; white-space:nowrap !important; }
+            .an-cols { display:flex !important; flex-wrap:nowrap !important; }
+            .an-col { flex:1 1 50% !important; }
+        }
+
         /* Print & PDF Specific Styles for Official A4 Multi-page Report */
         @media print {
             @page {
@@ -34,7 +60,7 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-            header, .no-print, button, select, input, .group, #toast, #add-modal, #dash-modal, #pdf-modal, #del-confirm-modal { 
+            header, .no-print, button, select, input, #toast, #add-modal, #dash-modal, #pdf-modal, #del-confirm-modal { 
                 display: none !important; 
             }
             /* Resolve Chrome/Edge Flex & Overflow Print Blank Bug */
@@ -54,10 +80,34 @@
                 display: block !important;
                 overflow: visible !important;
             }
-            #tab-dashboard, .space-y-6 {
+            #tab-dashboard {
                 display: block !important;
                 overflow: visible !important;
             }
+            /* 재발방지 대책 탭(화면용)은 인쇄에서 제외 → 대신 데이터 기반 요약(#print-analysis)을 출력 */
+            #tab-plan { display: none !important; }
+            /* 표 행은 확실히 표시 (hover용 group 클래스 등 영향 차단) */
+            #table-body tr { display: table-row !important; }
+            #table-body td:nth-child(6) { text-align: left !important; }
+            /* 인쇄용 열 너비: 상세내역을 넓혀 행 높이·페이지 수 축소 */
+            table:has(#table-body) { table-layout: fixed !important; }
+            table:has(#table-body) th:nth-child(1) { width: 5% !important; }
+            table:has(#table-body) th:nth-child(2) { width: 7% !important; }
+            table:has(#table-body) th:nth-child(3) { width: 6.5% !important; }
+            table:has(#table-body) th:nth-child(4) { width: 9% !important; }
+            table:has(#table-body) th:nth-child(5) { width: 9.5% !important; }
+            table:has(#table-body) th:nth-child(6) { width: auto !important; }
+            table:has(#table-body) th:nth-child(7) { width: 8% !important; }
+            table:has(#table-body) th:nth-child(8) { width: 8% !important; }
+            table:has(#table-body) th:nth-child(9) { width: 9.5% !important; }
+            #table-body td span { white-space: normal !important; }
+            #table-body td:nth-child(2) span, #table-body td:nth-child(9) span { padding: 1px 3px !important; font-size: 7pt !important; }
+            #table-body td:nth-child(2) span { white-space: nowrap !important; padding: 1px 2px !important; }
+            .min-w-\[1150px\] { min-width: 0 !important; }
+            .min-w-\[320px\] { min-width: 0 !important; }
+            /* 현장 분석 요약 */
+            #print-analysis { display: block !important; break-inside: avoid; page-break-inside: avoid; margin-top: 10px !important; }
+            body.no-analysis #print-analysis { display: none !important; }
             #tab-dashboard > * + * {
                 margin-top: 10px !important;
             }
@@ -427,10 +477,15 @@
                     </button>
                 </div>
             </div>
+
+            <!-- [인쇄 전용] 현장 데이터 분석 요약 및 대책 (선택 기간 데이터로 자동 생성) -->
+            <div id="print-analysis" class="hidden"></div>
         </div>
 
         <!-- Tab 2: Prevention Plan -->
         <div id="tab-plan" class="hidden space-y-6">
+            <!-- [화면용] 선택 기간 데이터 기반 분석 요약 (PDF 보고서 하단과 동일 내용) -->
+            <div id="screen-analysis"></div>
             <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <div class="flex items-center gap-2 text-emerald-400 font-semibold text-xs mb-1 uppercase tracking-wider">
@@ -591,6 +646,12 @@
                         </button>
                     </div>
                 </div>
+
+                <label class="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3 cursor-pointer">
+                    <input type="checkbox" id="pdf-include-analysis" checked style="width:16px;height:16px;margin-top:1px;flex:none">
+                    <span><b class="text-slate-800">상세목록 하단에 '현장 분석 요약 및 대책' 포함</b><br>
+                    <span class="text-[11px] text-slate-500">선택 기간 데이터로 발생요인·미복구 설비·반복구역을 자동 분석해 1쪽 이내로 요약합니다. 해제하면 상세목록까지만 출력합니다.</span></span>
+                </label>
 
                 <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
                     <button type="button" onclick="closePdfModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition">취소</button>
@@ -1221,7 +1282,7 @@
             
             if (selectedPeriodFilter === "ALL") {
                 if (printDocIdEl) printDocIdEl.innerText = `문서번호: FIR-2026-ALL`;
-                if (printTitleEl) printTitleEl.innerText = `2026년 원그로브 소방시설 비화재보/고장/감시 종합보고서 (누적 58건)`;
+                if (printTitleEl) printTitleEl.innerText = `2026년 원그로브 소방시설 비화재보/고장/감시 종합보고서 (누적 ${getScopedLogs().length}건)`;
                 if (printSubEl) printSubEl.innerText = `관제 기간: ${cur.period || '2026.07.01 ~ 09.30'} | 대상 구역: ${cur.target || 'A/B/C/D동 전 구역'}`;
             } else if (selectedPeriodFilter === "D30") {
                 if (printDocIdEl) printDocIdEl.innerText = `문서번호: FIR-2026-D30`;
@@ -1244,18 +1305,160 @@
             rowDisplayLimit = 99999;
             renderTable();
 
+            // 현장 분석 요약 포함 여부
+            const inc = document.getElementById('pdf-include-analysis');
+            document.body.classList.toggle('no-analysis', !!(inc && !inc.checked));
+            renderAnalysis();
+
             document.title = customName;
             showToast(`PDF 파일명 '${customName}.pdf' 설정으로 인쇄/저장창을 엽니다.`);
 
-            setTimeout(() => {
-                window.print();
-                setTimeout(() => {
-                    document.title = originalTitle;
-                    // 인쇄 후 원래 화면의 10개 표시 상태로 원복
-                    rowDisplayLimit = originalLimit;
-                    renderTable();
-                }, 1000);
-            }, 300);
+            // [수정] 인쇄 종료 후 원복: 고정 1초 타이머 대신 afterprint 이벤트 사용
+            //  (모바일 브라우저는 print()가 바로 반환되어, 1초 뒤 10개로 접힌 상태로 인쇄되는 문제 방지)
+            let restored = false;
+            const restore = () => {
+                if (restored) return;
+                restored = true;
+                document.title = originalTitle;
+                document.body.classList.remove('no-analysis');
+                rowDisplayLimit = originalLimit;
+                renderTable();
+            };
+            window.addEventListener('afterprint', restore, { once: true });
+
+            setTimeout(() => { window.print(); }, 300);
+        }
+
+        /* =========================================================================
+           현장 분석 요약 (선택 기간 데이터로 자동 생성)
+           - 등록 '추정 원인'이 '기타'로 뭉뚱그려진 건이 많아 상세내역 키워드로 현장 요인을 재분류
+           - 위에서부터 먼저 일치하는 요인 1개로 분류 (우선순위 순서 유의)
+        ========================================================================= */
+        const SITE_FACTORS = [
+            { key:'조작실수', re:/실수|오인|잘못 누|착오|오조작/,
+              act:'수동조작함·발신기 오인 방지 표지 및 보호커버 설치, 입점사·오피스 직원 사용법 안내' },
+            { key:'공사·작업', re:/공사|도색|페인트|분진|인테리어|보양|이설|작업중|작업 중|폼작업/,
+              act:'작업 허가 시 감지기 보양·임시차단 범위 사전 협의, 작업 종료 즉시 보양 제거 및 차단해제 확인' },
+            { key:'선로·결선·연동제어', re:/선로|결선|단선|단자|중계기|2차폐쇄|연동제어|접점|저항/,
+              act:'방화셔터 연동제어기·중계기 결선 전수 점검, 반복 신호 회로 절연저항 측정' },
+            { key:'조리 열·증기', re:/조리|주방|열기|증기|온수기|연통|식기세척/,
+              act:'주방 열감지기 공칭작동온도(정온식 등급) 적정성 재검토, 조리 시 후드·환기 가동 안내' },
+            { key:'결로·습기', re:/결로|습기|습도|이슬|냉장|물방울/,
+              act:'냉장·신선코너 등 결로 구역 방수형/아날로그 감지기 교체, 천장 타공부 실리콘 밀실 처리' },
+            { key:'누수·우천', re:/누수|빗물|침수|낙수|우천|폭우|호우|비바람/,
+              act:'주차장 램프·지하층 누수부 방수커버 설치 및 슬래브 균열 인젝션 방수' },
+            { key:'방풍실·외기노출', re:/방풍실|출입구|출입문|그레이팅|외부/,
+              act:'방풍실·출입구 감지기 실내측 이설(30~50cm), 우천 시 순회점검 강화' },
+            { key:'가스·먼지 등 환경', re:/가스|헬륨|배기가스|먼지/,
+              act:'가스·분진 발생 작업 사전 통보 체계 구축, 해당 구역 감지기 형식 검토' },
+            { key:'감지기 불량', re:/손상|불량|교체|지속적인 고장/,
+              act:'반복 고장 감지기·베이스 교체 및 동일 형식 표본 점검' }
+        ];
+        function classifyFactor(item) {
+            const t = `${item.desc || ''} ${item.status || ''}`;
+            for (const f of SITE_FACTORS) if (f.re.test(t)) return f.key;
+            const byCause = { '누수/침수':'누수·우천', '결로현상':'결로·습기', '외부노출/방풍실':'방풍실·외기노출', '감지기고장':'감지기 불량' };
+            return byCause[item.cause] || '원인 확인중';
+        }
+        function isOpenBlock(item) {
+            const st = String(item.status || '');
+            if (/해제|완료|정상/.test(st)) return false;
+            return /차단|탈거/.test(st);
+        }
+        function escHtml(v) {
+            return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        function cut(v, n) { const t = String(v || ''); return escHtml(t.length > n ? t.slice(0, n) + '…' : t); }
+
+        function buildAnalysisHtml() {
+            const L = getScopedLogs();
+            const total = L.length;
+            const periodName = selectedPeriodFilter === 'ALL' ? '2026년 전체' : selectedPeriodFilter === 'D30' ? '최근 30일' : `2026년 ${selectedPeriodFilter}월`;
+            if (!total) {
+                return `<div class="an-wrap"><div class="an-head"><h2>현장 분석 요약 및 대책</h2><span>${periodName}</span></div><p>선택 기간에 발생 이력이 없습니다.</p></div>`;
+            }
+            const cnt = t => L.filter(l => l.type === t).length;
+            const nf = cnt('비화재보'), ft = cnt('고장'), wt = cnt('감시');
+
+            // 1) 현장 요인 재분류
+            const fMap = {};
+            L.forEach(l => {
+                const k = classifyFactor(l);
+                if (!fMap[k]) fMap[k] = { key:k, n:0, types:{}, latest:null, latestDt:null };
+                const f = fMap[k];
+                f.n++;
+                f.types[l.type] = (f.types[l.type] || 0) + 1;
+                const dt = getItemDateObj(l);
+                if (!f.latest || (dt && (!f.latestDt || dt > f.latestDt))) { f.latest = l; f.latestDt = dt; }
+            });
+            const factors = Object.values(fMap).sort((a,b) => b.n - a.n);
+            const topF = factors.slice(0, 5);
+            const maxN = topF[0].n;
+
+            // 2) 반복 발생 구역 (동/층, 2건 이상)
+            const zMap = {};
+            L.forEach(l => { const z = l.location || '-'; zMap[z] = (zMap[z] || 0) + 1; });
+            const zones = Object.entries(zMap).sort((a,b) => b[1]-a[1]).filter(z => z[1] >= 2).slice(0, 3);
+
+            // 3) 미복구(차단·탈거 유지) - 조회 기간과 무관하게 전체 이력 기준
+            const today = new Date(); today.setHours(0,0,0,0);
+            const open = detectorLogs.filter(isOpenBlock).map(l => {
+                const dt = getItemDateObj(l);
+                return { l, days: dt ? Math.max(0, Math.floor((today - dt) / 86400000)) : 0 };
+            }).sort((a,b) => b.days - a.days);
+            const over30 = open.filter(o => o.days >= 30).length;
+
+            const zoneTxt = zones.length ? zones.map(z => `${escHtml(z[0])}(${z[1]}건)`).join(', ') : '특정 구역 집중 없음';
+            const sumTxt = `${periodName} 총 <b>${total}건</b>(비화재보 ${nf} · 고장 ${ft} · 감시 ${wt}) 발생. `
+                + `주요 요인은 <b>${topF.slice(0,3).map(f => `${escHtml(f.key)} ${f.n}건`).join(', ')}</b>이고, `
+                + `반복 발생 구역은 ${zoneTxt}입니다. `
+                + (open.length
+                    ? `차단·탈거 상태로 남은 설비가 <span class="an-red">${open.length}개소</span>(30일 이상 ${over30}개소)로, 연동정지 해제 확대 전에 우선 복구가 필요합니다.`
+                    : `현재 미복구 차단·탈거 설비는 없습니다.`);
+
+            const fRows = topF.map(f => {
+                const lt = f.latest || {};
+                const def = SITE_FACTORS.find(x => x.key === f.key);
+                const act = def ? def.act : '현장 확인 후 원인 분류 및 조치결과 기록';
+                const typeTxt = Object.entries(f.types).map(([t,n]) => `${t} ${n}`).join(' / ');
+                return `<tr>
+                    <td><b>${escHtml(f.key)}</b><br><span class="an-bar" style="width:${Math.max(6, Math.round(f.n/maxN*56))}px"></span>${f.n}건 (${Math.round(f.n/total*100)}%)<br><span class="an-sub">${escHtml(typeTxt)}</span></td>
+                    <td>${escHtml(act)}<br><span class="an-sub">최근: ${escHtml(lt.date)} ${escHtml(lt.location)} ${cut(lt.desc, 32)}</span></td>
+                </tr>`;
+            }).join('');
+
+            const oRows = open.slice(0, 6).map(o => `<tr>
+                    <td class="c ${o.days >= 30 ? 'an-red' : ''}">${o.days}일</td>
+                    <td class="c">${escHtml(o.l.location)}</td>
+                    <td>${escHtml(o.l.address)}<br><span class="an-sub">${cut(o.l.desc, 28)}</span></td>
+                    <td class="c">${escHtml(o.l.status)}</td>
+                </tr>`).join('');
+
+            return `<div class="an-wrap">
+                <div class="an-head"><h2>현장 분석 요약 및 대책</h2><span>${periodName} 데이터 자동 분석 · 상세내역 키워드로 요인 재분류</span></div>
+                <div class="an-sum">${sumTxt}</div>
+                <div class="an-cols">
+                    <div class="an-col">
+                        <h3>① 주요 발생 요인과 대책 (상위 ${topF.length}개)</h3>
+                        <table class="an-tbl"><thead><tr><th style="width:36%">요인 / 건수</th><th>대책 · 최근 사례</th></tr></thead><tbody>${fRows}</tbody></table>
+                    </div>
+                    <div class="an-col">
+                        <h3>② 미복구 차단·탈거 설비 (전체 기간, 경과일 순)</h3>
+                        ${open.length
+                            ? `<table class="an-tbl"><thead><tr><th>경과</th><th>동/층</th><th>Address / 내역</th><th>상태</th></tr></thead><tbody>${oRows}</tbody></table>
+                               ${open.length > 6 ? `<div class="an-note">외 ${open.length - 6}개소 — 상세목록 '현재 상태' 참조</div>` : ''}`
+                            : `<p style="margin:4px 0">미복구 설비 없음</p>`}
+                        <div class="an-note">※ 「소방시설 폐쇄·차단 시 행동요령 등에 관한 고시」 제2조: 차단 기간 최소화 및 사유·기간 사전 공지. 복구 후 상태를 '차단해제/점검완료'로 갱신해야 미복구 집계에서 빠집니다.</div>
+                    </div>
+                </div>
+            </div>`;
+        }
+        function renderAnalysis() {
+            const html = buildAnalysisHtml();
+            const pr = document.getElementById('print-analysis');
+            const sc = document.getElementById('screen-analysis');
+            if (pr) pr.innerHTML = html;
+            if (sc) sc.innerHTML = html;
         }
 
         function renderTable() {
@@ -1335,6 +1538,7 @@
                 else if(item.cause === '오동작') causeBadge = `<span class="text-purple-600 font-medium whitespace-nowrap"><i class="fa-solid fa-triangle-exclamation mr-1"></i>오동작</span>`;    
                 else causeBadge = `<span class="text-slate-600 font-medium whitespace-nowrap"><i class="fa-solid fa-circle-info mr-1"></i>기타</span>`;
 
+                item.status = item.status || '';
                 let statusColor = 'bg-slate-100 text-slate-700';
                 if(item.status.includes('차단해제') || item.status.includes('완료')) {
                     statusColor = 'bg-emerald-100 text-emerald-800 border border-emerald-300';
@@ -1482,6 +1686,7 @@
             // ①번 수정: C동과 건수를 상하로 분리
             document.getElementById('kpi-hotspot-bld').innerText = maxBuilding !== '-' ? `${maxBuilding}동` : '-';
             document.getElementById('kpi-hotspot-cnt').innerText = maxBuilding !== '-' ? `누적 ${maxCount}건 발생` : '발생 없음';
+            renderAnalysis();
         }
 
         function openAddModal() {
