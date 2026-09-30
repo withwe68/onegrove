@@ -802,33 +802,33 @@
         let isFirstLoad = true;
         let deleteTargetId = null;
 
-        // 원그로브 2026년 전체 58건 종합 소방시설 관제 데이터 세트 (7월~9월 전체 누적)
+        // 원그로브 2026년 전체 58건 종합 소방시설 관제 데이터 세트 (공식 PDF 및 이미지 원본 완벽 동기화)
         const LATEST_DASHBOARD_DATA = {
-            "id": "dash-2026-master",
+            "id": "dash-2026-master-v3",
             "title": "2026년 소방시설 비화재보/고장/감시 이력관리",
             "period": "2026.07.01 ~ 2026.09.30",
             "dept": "종합방재실/소방파트",
             "target": "A/B/C/D동 전 구역",
             "desc": "결로, 누수 및 외부 습기 관련 비화재보/고장/감시 이력 모니터링",
-            "updatedAt": "2026. 9. 28. 오후 6:00:00",
+            "updatedAt": "2026. 9. 28. 오후 9:15:00",
             "logs": [
-                // 9월 데이터 (16건)
-                { "id": 1785000000016, "date": "9/28", "type": "감시", "location": "B동 지하2층", "building": "B", "address": "0403-0068", "detectorType": "기 타", "assignee": "심준서", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 2-8). 선로수정 후 정상기동 테스트 완료.", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000015, "date": "9/28", "type": "감시", "location": "C동 지하2층", "building": "C", "address": "0434-0082", "detectorType": "기 타", "assignee": "심준서", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 1-8)", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000014, "date": "9/28", "type": "감시", "location": "D동 지하2층", "building": "D", "address": "0434-0078", "detectorType": "기 타", "assignee": "심준서", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 1-6), 선로수정작업.", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000013, "date": "9/28", "type": "비화재보", "location": "A/B2F", "building": "A", "address": "0403-2051", "detectorType": "일반 연기감지기", "assignee": "심준서", "desc": "A동 지하2층 트레이더스 초밥코너 결로인해 연감지기 동작", "cause": "결로현상", "status": "감지기 탈거" },
-                { "id": 1785000000012, "date": "9/26", "type": "고장", "location": "A/1F", "building": "A", "address": "0412-1004", "detectorType": "방화셔터 연기감지기", "assignee": "이규현", "desc": "A동 1층 정문 방풍실 외부 습기 유입으로 센서 단선 고장", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
-                { "id": 1785000000011, "date": "9/25", "type": "비화재보", "location": "B/2F", "building": "B", "address": "0415-3012", "detectorType": "아날로그 감지기", "assignee": "김학제", "desc": "B동 2층 식당가 조리 중 배기덕트 틈새 연기 배출로 감지기 오동작", "cause": "오동작", "status": "점검완료" },
-                { "id": 1785000000010, "date": "9/23", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0426-2009", "detectorType": "방화셔터 연기감지기", "assignee": "김학제", "desc": "무인양품 매장 내 방화셔터용 연기감지기 지속적인 예경 발생으로 입력차단", "cause": "기타", "status": "입력차단" },
-                { "id": 1785000000009, "date": "9/21", "type": "고장", "location": "D/3F", "building": "D", "address": "0305-1102", "detectorType": "일반 열감지기", "assignee": "박현인", "desc": "D동 3층 공조실 내부 센서 불량으로 단선 신호 발생", "cause": "감지기고장", "status": "점검완료" },
-                { "id": 1785000000008, "date": "9/19", "type": "비화재보", "location": "A/B1F", "building": "A", "address": "0411-1055", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 지하1층 하역장 셔터 감지기 외부 습기 흡착으로 비화재보", "cause": "외부노출/방풍실", "status": "점검완료" },
-                { "id": 1785000000007, "date": "9/17", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-2015", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 발전기실 앞 상단 결로 낙수로 헤드 부식 단선", "cause": "누수/침수", "status": "감지기 탈거" },
-                { "id": 1785000000006, "date": "9/15", "type": "비화재보", "location": "B/B1F", "building": "B", "address": "0414-2018", "detectorType": "일반 연기감지기", "assignee": "심준서", "desc": "B동 지하1층 디라이프스타일키친 천장 결로 수분으로 비화재보", "cause": "결로현상", "status": "점검완료" },
-                { "id": 1785000000005, "date": "9/12", "type": "고장", "location": "A/B3F", "building": "A", "address": "0401-3042", "detectorType": "일반 연기감지기", "assignee": "박상현", "desc": "A동 지하3층 주차장 램프 결로수 유입으로 감지기 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
-                { "id": 1785000000004, "date": "9/10", "type": "비화재보", "location": "D/B1F", "building": "D", "address": "0436-1011", "detectorType": "아날로그 감지기", "assignee": "김학제", "desc": "D동 지하1층 스타벅스 주방 인근 환기구 결로 연기감지기 동작", "cause": "결로현상", "status": "점검완료" },
-                { "id": 1785000000003, "date": "9/08", "type": "비화재보", "location": "A/4F", "building": "A", "address": "0302-1205", "detectorType": "일반 연기감지기", "assignee": "이혁기", "desc": "A동 4층 탕비실 커피포트 과열 증기로 연기감지기 오동작", "cause": "오동작", "status": "점검완료" },
-                { "id": 1785000000002, "date": "9/05", "type": "고장", "location": "C/B2F", "building": "C", "address": "0432-1110", "detectorType": "방화셔터 열감지기", "assignee": "김근철", "desc": "C동 지하2층 방화셔터 연동 열감지기 내부 접점 불량", "cause": "감지기고장", "status": "점검완료" },
-                { "id": 1785000000001, "date": "9/02", "type": "비화재보", "location": "B/1F", "building": "B", "address": "0413-2005", "detectorType": "일반 연기감지기", "assignee": "박현인", "desc": "B동 1층 출입구 방풍실 강풍에 따른 먼지 유입으로 비화재보", "cause": "외부노출/방풍실", "status": "점검완료" },
+                // [공식 검증 완료] 9월 실제 발생 데이터 (총 16건: 비화재보 8건, 고장 5건, 감시 3건 / A동 9건 최다)
+                { "id": 1785000000016, "date": "9/28", "type": "비화재보", "location": "A/B2F", "building": "A", "address": "0403-2051", "detectorType": "일반 연기감지기", "assignee": "심준서/이상현", "desc": "A동 지하2층 트레이더스 초밥코너 결로로 인해 연감지기 동작 (이마트 시설팀 천장 타공부분 실리콘 처리하고 재부착후 복구완료 / 출력: 지구경종, 비상방송, 시각경보기, 방화셔터)", "cause": "결로현상", "status": "점검완료" },
+                { "id": 1785000000015, "date": "9/28", "type": "비화재보", "location": "A/7F", "building": "A", "address": "0014-2136", "detectorType": "수동조작함", "assignee": "심준서", "desc": "4번계단 배기 수동조작 기동스위치를 전등스위치로 오인해서 DL 여직원이 수동스위치 누름", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000014, "date": "9/28", "type": "비화재보", "location": "A/B2F", "building": "A", "address": "0014-2164", "detectorType": "수동조작함", "assignee": "심준서", "desc": "A동 지하2층 피난안전구역내에 있는 급기댐퍼동작 현재 원인파악중", "cause": "오동작", "status": "점검중" },
+                { "id": 1785000000013, "date": "9/28", "type": "감시", "location": "D/B2F", "building": "D", "address": "0434-0078", "detectorType": "기 타", "assignee": "심준서/박현인", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 1-6), 선로수정작업-동성처리", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000012, "date": "9/28", "type": "감시", "location": "C/B1F", "building": "C", "address": "0434-0082", "detectorType": "기 타", "assignee": "박상현/이남원", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 1-8) → 결선 수정후 야간 테스트 완료", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000011, "date": "9/28", "type": "감시", "location": "B/B2F", "building": "B", "address": "0403-0068", "detectorType": "기 타", "assignee": "심준서/박현인", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 2-8) 연동제어기 결선 수정 후 정상-동성 방문처리", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000010, "date": "9/26", "type": "비화재보", "location": "C/B2F", "building": "C", "address": "0424-2018", "detectorType": "일반 열감지기", "assignee": "김병일/이혁기", "desc": "C동 지하2층 트레이더스 직원식당 조리중 열기로 예경발생, 지속될 염려로 탈거 조치 후 09.28 감지기 재부착 및 입력차단해제", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000009, "date": "9/22", "type": "비화재보", "location": "A/B1F", "building": "A", "address": "0405-0648", "detectorType": "수동조작함", "assignee": "이규현/박현인", "desc": "무브먼트랩 직원이 실수로 오동작 (조작실수 주의전달)", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000008, "date": "9/18", "type": "고장", "location": "A/2F", "building": "A", "address": "0410-0038", "detectorType": "수동조작함", "assignee": "이남원/한동구", "desc": "제연수동조작함 이설 야간작업 후 복구연결 처리예정 (임시 입력차단 처리 후 차단해제)", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000007, "date": "9/18", "type": "비화재보", "location": "A/1F", "building": "A", "address": "0407-1090", "detectorType": "일반 열감지기", "assignee": "이규현", "desc": "키쿠가와 주방 정온식 감지기 조리 중 발생한 열로 인해 비화재보 발생", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000006, "date": "9/14", "type": "비화재보", "location": "A/11F", "building": "A", "address": "0019-2048", "detectorType": "일반 열감지기", "assignee": "이규현", "desc": "DL주방 조리중 발생한 열로 인한 비화재보 현장확인", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000005, "date": "9/12", "type": "고장", "location": "B/2F", "building": "B", "address": "0420-3050", "detectorType": "일반 열감지기", "assignee": "이규현", "desc": "B동 2층 빕스 식기세척실내 열감지기 지속적인 고장발생 (교체완료 및 입력차단 해제)", "cause": "감지기고장", "status": "점검완료" },
+                { "id": 1785000000004, "date": "9/4", "type": "고장", "location": "D/3F", "building": "D", "address": "0303-0089", "detectorType": "일반 연기감지기", "assignee": "김학제/이남원", "desc": "페인트 도색작업중 보양상태 불량 (해리슨스트릿아시아) → 현장 주의전달", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000003, "date": "9/3", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0425-3015", "detectorType": "일반 연기감지기", "assignee": "이규현/오지환", "desc": "19:15 계단실내 환기불량 및 습기로 인한 감지기 오동작 경보발생, 감지기 청소 후 재부착", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 1785000000002, "date": "9/2", "type": "고장", "location": "A/B2F", "building": "A", "address": "0413-3043,3044", "detectorType": "방화셔터 연기감지기", "assignee": "박현인/한동구", "desc": "A동 지하2층 신선식품코너 상부 감지기 결로현상으로 감지기 탈거, 이마트시설팀 조치 후 취부 및 입력차단해제", "cause": "결로현상", "status": "점검완료" },
+                { "id": 1785000000001, "date": "9/1", "type": "고장", "location": "A/B2F", "building": "A", "address": "0413-3044~84 (40개소)", "detectorType": "기 타", "assignee": "한동구", "desc": "C동 지하2층 트레이더스 방화셔터 감지기 선로단선, 감지기 결로로인한 베이스 관통부 폼작업 중 베이스 선로 분리로인한 43번 감지기 후단 선로 고장 발생 (이마트 시설팀), 방재실에서 현장 확인 후 선로 재연결 및 베이스 교체 후 정상", "cause": "기타", "status": "점검완료" },
 
                 // 8월 데이터 (18건)
                 { "id": 1784800000018, "date": "8/29", "type": "고장", "location": "A/B2F", "building": "A", "address": "0403-1090", "detectorType": "방화셔터 연기감지기", "assignee": "심준서", "desc": "A동 B2 트레이더스 하역장 셔터 감지기 손상 탈거", "cause": "감지기고장", "status": "감지기 탈거" },
@@ -920,16 +920,21 @@
                         fetchedDashboards.push(doc.data());
                     });
 
-                    // 58건 마스터 데이터 보장 로직
+                    // 58건 마스터 데이터 및 9월 데이터 무결성 보장 로직
                     if (fetchedDashboards.length > 0) {
                         dashboards = fetchedDashboards;
-                        const master = dashboards.find(d => d.id === LATEST_DASHBOARD_DATA.id || (d.logs && d.logs.length >= 50));
-                        if (master) {
-                            activeDashId = master.id;
-                        } else {
-                            dashboards.unshift(JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA)));
+                        let master = dashboards.find(d => d.id === LATEST_DASHBOARD_DATA.id);
+                        
+                        // 구버전 가상 데이터(예: 9/25 식당가 조리 등)가 남아있는 경우 최신 공식 마스터 데이터로 자동 업그레이드
+                        const hasOldMockSeptData = master && master.logs && master.logs.some(l => l.desc && l.desc.includes('식당가 조리 중 배기덕트'));
+                        if (!master || hasOldMockSeptData) {
+                            const filteredDashes = dashboards.filter(d => d.id !== LATEST_DASHBOARD_DATA.id);
+                            filteredDashes.unshift(JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA)));
+                            dashboards = filteredDashes;
                             activeDashId = LATEST_DASHBOARD_DATA.id;
                             saveDashboardsToStorage();
+                        } else {
+                            activeDashId = master.id;
                         }
                     } else {
                         dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
@@ -958,8 +963,10 @@
                 const saved = localStorage.getItem('fire_dashboards_v2');
                 if (saved) {
                     dashboards = JSON.parse(saved);
-                    const masterIdx = dashboards.findIndex(d => d.logs && d.logs.length >= 50);
-                    if (masterIdx === -1) {
+                    // 로컬스토리지에 구버전 가상 데이터가 저장되어 있으면 공식 마스터로 덮어쓰기
+                    const masterIdx = dashboards.findIndex(d => d.id === LATEST_DASHBOARD_DATA.id);
+                    const hasOldMock = masterIdx !== -1 && dashboards[masterIdx].logs && dashboards[masterIdx].logs.some(l => l.desc && l.desc.includes('식당가 조리 중 배기덕트'));
+                    if (masterIdx === -1 || hasOldMock) {
                         dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
                     }
                 } else {
