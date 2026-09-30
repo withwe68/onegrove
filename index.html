@@ -34,7 +34,7 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-            header, .no-print, button, select, input, .group, #toast, #add-modal, #dash-modal, #pdf-modal { 
+            header, .no-print, button, select, input, .group, #toast, #add-modal, #dash-modal, #pdf-modal, #del-confirm-modal { 
                 display: none !important; 
             }
             body { 
@@ -106,9 +106,9 @@
             <div>
                 <div class="flex items-center gap-2">
                     <span class="px-2 py-0.5 bg-blue-100 text-blue-800 font-bold text-xs rounded border border-blue-300">소방방재 공식보고서</span>
-                    <span class="text-xs text-slate-500" id="print-doc-id">문서번호: FIR-2026-09</span>
+                    <span class="text-xs text-slate-500" id="print-doc-id">문서번호: FIR-2026-ALL</span>
                 </div>
-                <h1 class="text-2xl font-extrabold text-slate-900 mt-1" id="print-doc-title">2026년 종합방재실 소방시설 고장/감시 월간보고서</h1>
+                <h1 class="text-2xl font-extrabold text-slate-900 mt-1" id="print-doc-title">2026년 원그로브 소방시설 비화재보/고장/감시 이력관리 보고서</h1>
                 <p class="text-xs text-slate-600 mt-1" id="print-doc-subtitle">소방감지기 오동작(비화재보), 고장 및 감시 선로 복구 이력 현황</p>
             </div>
             
@@ -137,45 +137,52 @@
 
     <!-- Top Sticky Header -->
     <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30 no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-blue-600 p-2.5 rounded-xl shadow-md text-white relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col xl:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3 w-full xl:w-auto justify-between xl:justify-start min-w-0">
+                <div class="flex items-center space-x-3 min-w-0">
+                    <div class="bg-blue-600 p-2.5 rounded-xl shadow-md text-white relative flex-shrink-0">
                         <i class="fa-solid fa-cloud-showers-water text-xl"></i>
                         <!-- Firebase Live Indicator -->
                         <span id="firebase-indicator" class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-slate-900 hidden animate-pulse" title="Firebase 클라우드 실시간 연동 중"></span>
                     </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h1 class="text-lg font-bold tracking-tight" id="header-dash-title">2026년 종합방재실 소방시설 고장/감시 이력관리 대시보드</h1>
-                            <span class="text-[11px] bg-blue-900 text-blue-200 px-2 py-0.5 rounded-full font-medium" id="header-dash-period">2026년 전체</span>
+                    <!-- Single-line title container without awkward line breaks -->
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-nowrap">
+                            <h1 class="text-sm sm:text-base md:text-lg font-extrabold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis" id="header-dash-title">
+                                2026년 소방시설 비화재보/고장/감시 이력관리
+                            </h1>
+                            <span class="text-[11px] bg-blue-900 text-blue-200 px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0" id="header-dash-period">
+                                2026.07.01 ~ 09.30
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-400" id="header-dash-desc">결로, 누수 및 외부 습기 관련 비화재보/고장/감시 이력 모니터링</p>
+                        <p class="text-xs text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis mt-0.5" id="header-dash-desc">
+                            비화재보/감시/고장 발생 수신기 모니터링 및 복구 이력
+                        </p>
                     </div>
                 </div>
             </div>
 
             <!-- Action Controls -->
-            <div class="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
+            <div class="flex items-center gap-2 w-full xl:w-auto justify-end flex-wrap flex-shrink-0">
                 <!-- Dashboard Selector Dropdown -->
                 <div class="relative inline-block text-left">
-                    <select id="dash-selector" onchange="switchDashboard(this.value)" class="bg-slate-800 text-slate-100 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                    <select id="dash-selector" onchange="switchDashboard(this.value)" class="bg-slate-800 text-slate-100 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer max-w-[210px] text-ellipsis">
                         <!-- JS Populated -->
                     </select>
                 </div>
 
-                <button onclick="openNewDashModal()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5 text-xs" title="새 관제 대시보드 만들기">
+                <button onclick="openNewDashModal()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5 text-xs whitespace-nowrap" title="새 관제 대시보드 만들기">
                     <i class="fa-solid fa-folder-plus"></i> 신규 대시보드
                 </button>
 
                 <!-- PDF Monthly Export Button -->
-                <button onclick="openPdfModal()" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs ring-2 ring-amber-400/40" title="월별 공식 PDF 보고서 저장 및 인쇄">
+                <button onclick="openPdfModal()" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs ring-2 ring-amber-400/40 whitespace-nowrap" title="기간별 공식 PDF 보고서 저장 및 인쇄">
                     <i class="fa-solid fa-file-pdf"></i> PDF 보고서 / 인쇄
                 </button>
 
                 <!-- Export Dropdown -->
                 <div class="relative group">
-                    <button class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs">
+                    <button class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs whitespace-nowrap">
                         <i class="fa-solid fa-file-export"></i> 내보내기 <i class="fa-solid fa-chevron-down text-[10px]"></i>
                     </button>
                     <div class="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 hidden group-hover:block group-focus-within:block z-50 text-xs text-slate-700">
@@ -194,7 +201,7 @@
                     </div>
                 </div>
 
-                <button onclick="openAddModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs">
+                <button onclick="openAddModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs whitespace-nowrap">
                     <i class="fa-solid fa-plus"></i> 이력 추가
                 </button>
             </div>
@@ -217,19 +224,18 @@
 
         <div id="tab-dashboard" class="space-y-6">
             
-            <!-- Quick Month & Category Quick Bar -->
+            <!-- Quick Period Filter Bar ('보고 기간선택'으로 명칭 및 옵션 재구성) -->
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3 no-print">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                        <i class="fa-solid fa-calendar-days text-blue-600"></i> 보고서 대상 월 선택:
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-calendar-check text-blue-600"></i> 보고 기간선택:
                     </span>
-                    <select id="filter-month" onchange="handleMonthChange()" class="px-3 py-1.5 text-xs font-bold bg-blue-50 border border-blue-300 text-blue-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
-                        <option value="ALL">전체 기간 누적</option>
-                        <!-- Populated dynamically via JS -->
+                    <select id="filter-period" onchange="handlePeriodChange()" class="px-3.5 py-1.5 text-xs font-bold bg-blue-50 border border-blue-300 text-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm">
+                        <!-- Populated via JS: 올 해(전체), 최근 30일, 9월, 8월, 7월 -->
                     </select>
                 </div>
                 <div class="text-xs text-slate-500 flex items-center gap-3">
-                    <span id="month-summary-badge" class="px-2.5 py-1 bg-slate-100 rounded-md font-semibold text-slate-700">전체 데이터 조회 중</span>
+                    <span id="period-summary-badge" class="px-3 py-1 bg-slate-100 rounded-lg font-bold text-slate-700">올 해 2026년 전체 누적 58건 조회 중</span>
                     <button onclick="openPdfModal()" class="text-amber-600 hover:text-amber-700 font-bold hover:underline flex items-center gap-1">
                         <i class="fa-solid fa-file-pdf"></i> 이 기간으로 PDF 보고서 출력
                     </button>
@@ -241,8 +247,8 @@
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex items-center justify-between">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">총 발생 건수</p>
-                        <h3 class="text-3xl font-extrabold text-slate-800 mt-1" id="kpi-total">0건</h3>
-                        <span class="inline-block mt-2 text-xs text-slate-500" id="kpi-period-label">선택 기간 기준</span>
+                        <h3 class="text-3xl font-extrabold text-slate-800 mt-1" id="kpi-total">58건</h3>
+                        <span class="inline-block mt-2 text-xs text-slate-500" id="kpi-period-label">올 해 전체 기간 기준</span>
                     </div>
                     <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 text-xl">
                         <i class="fa-solid fa-list-check"></i>
@@ -253,7 +259,7 @@
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wider text-amber-600">비화재보 (습기/결로)</p>
                         <h3 class="text-3xl font-extrabold text-amber-600 mt-1" id="kpi-nonfire">0건</h3>
-                        <span class="inline-block mt-2 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md" id="kpi-nonfire-ratio">전체 중 0%</span>
+                        <span class="inline-block mt-2 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-semibold" id="kpi-nonfire-ratio">전체 중 0%</span>
                     </div>
                     <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 text-xl">
                         <i class="fa-solid fa-bell-slash"></i>
@@ -264,7 +270,7 @@
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wider text-rose-600">고장 탈거</p>
                         <h3 class="text-3xl font-extrabold text-rose-600 mt-1" id="kpi-fault">0건</h3>
-                        <span class="inline-block mt-2 text-xs text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">누수/침수 및 방풍실</span>
+                        <span class="inline-block mt-2 text-xs text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md font-semibold">누수/침수 및 방풍실</span>
                     </div>
                     <div class="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center text-rose-600 text-xl">
                         <i class="fa-solid fa-triangle-exclamation"></i>
@@ -275,7 +281,7 @@
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">최다 발생 구역</p>
                         <h3 class="text-2xl font-extrabold text-indigo-700 mt-1" id="kpi-hotspot">-</h3>
-                        <span class="inline-block mt-2 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">주요 취약 동/구역</span>
+                        <span class="inline-block mt-2 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md font-semibold">주요 취약 동/구역</span>
                     </div>
                     <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 text-xl">
                         <i class="fa-solid fa-building-circle-exclamation"></i>
@@ -309,21 +315,24 @@
                 </div>
             </div>
 
+            <!-- Detailed History List Table (Default: 최근 10개 표시) -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-slate-100">
                     <div>
-                        <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-center gap-2.5">
                             <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">
                                 <i class="fa-solid fa-list-ul text-blue-600"></i> 상세 감시/고장 이력 목록
                             </h2>
-                            <span class="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-medium">
-                                <i class="fa-solid fa-mouse-pointer mr-1"></i>행을 누르면 바로 수정창이 열립니다
+                            <span id="table-display-badge" class="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-bold text-[11px]">
+                                최근 10개 항목 표시 중
                             </span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-0.5">필터 및 검색을 통해 현황 파악 및 조치 이력 관리</p>
+                        <p class="text-xs text-slate-500 mt-1">최신순 정렬 및 필터링을 통해 원인 파악 및 조치 이력 관리</p>
                     </div>
+                    
+                    <!-- Filters and Limit Select -->
                     <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                        <div class="relative flex-1 sm:w-60">
+                        <div class="relative flex-1 sm:w-56">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                             <input type="text" id="search-input" oninput="renderTable()" placeholder="장소, 내역, Address 검색..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
@@ -339,6 +348,11 @@
                             <option value="비화재보">비화재보</option>
                             <option value="고장">고장</option>
                             <option value="감시">감시</option>
+                        </select>
+                        <!-- Recent 10 vs All Toggle Selector -->
+                        <select id="filter-row-limit" onchange="handleLimitChange()" class="px-3 py-1.5 text-xs bg-amber-50 border border-amber-300 text-amber-900 rounded-lg font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer shadow-sm">
+                            <option value="10" selected>최근 10개만 보기</option>
+                            <option value="ALL">전체 항목 모두보기</option>
                         </select>
                     </div>
                 </div>
@@ -364,9 +378,18 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Footer counter & Expand notice -->
+                <div class="flex flex-col sm:flex-row justify-between items-center pt-2 text-xs text-slate-500 gap-2">
+                    <span id="table-footer-info">총 58건 중 최근 10개 항목 표시 중</span>
+                    <button id="toggle-expand-btn" onclick="toggleAllRows()" class="text-blue-600 hover:text-blue-800 font-bold hover:underline flex items-center gap-1">
+                        <span>전체 항목 모두보기</span> <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
+        <!-- Tab 2: Prevention Plan -->
         <div id="tab-plan" class="hidden space-y-6">
             <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
@@ -496,12 +519,12 @@
         </div>
     </main>
 
-    <!-- PDF Export Modal (Monthly & Custom presets) -->
+    <!-- PDF Export Modal -->
     <div id="pdf-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
+        <div onclick="event.stopPropagation()" class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
             <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
                 <h3 class="font-bold text-base flex items-center gap-2">
-                    <i class="fa-solid fa-file-pdf text-amber-400"></i> 월별 보고서 PDF 파일명 및 저장 설정
+                    <i class="fa-solid fa-file-pdf text-amber-400"></i> 기간별 보고서 PDF 파일명 및 저장 설정
                 </h3>
                 <button onclick="closePdfModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
@@ -514,11 +537,11 @@
 
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-[11px] text-slate-600">
                     <p class="font-bold text-slate-800 flex items-center gap-1">
-                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> 빠른 월별 보고서 파일명 프리셋:
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> 빠른 공식 보고서 파일명 프리셋:
                     </p>
                     <div class="flex flex-wrap gap-1.5 pt-1">
                         <button type="button" onclick="setPdfPresetName(1)" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-medium transition shadow-sm">
-                            [선택월] 월간 공식보고서
+                            [선택기간] 공식 종합보고서
                         </button>
                         <button type="button" onclick="setPdfPresetName(2)" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-medium transition shadow-sm">
                             [일자포함] 종합방재실 보고
@@ -539,9 +562,8 @@
         </div>
     </div>
 
-    <!-- Safe Add / Edit Modal (Backdrop click auto-dismiss disabled to prevent data loss!) -->
+    <!-- Safe Add / Edit Modal (Backdrop dismiss protected) -->
     <div id="add-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <!-- Inner dialog stops propagation so dragging out doesn't trigger closure -->
         <div onclick="event.stopPropagation()" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 max-h-[90vh] flex flex-col">
             <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center sticky top-0 z-10">
                 <h3 class="font-bold text-base flex items-center gap-2" id="modal-title">
@@ -696,6 +718,25 @@
         </div>
     </div>
 
+    <!-- Custom Delete Confirmation Modal (Replaces native confirm/alert) -->
+    <div id="del-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div onclick="event.stopPropagation()" class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-200 p-6 space-y-4 text-xs">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg flex-shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm">이력 내역 삭제 확인</h4>
+                    <p class="text-slate-500 mt-0.5">정말로 이 이력을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeDelConfirmModal(false)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium">취소</button>
+                <button type="button" onclick="closeDelConfirmModal(true)" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold shadow">삭제하기</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none z-50 text-xs">
         <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
@@ -719,41 +760,96 @@
         let useFirebase = false;
         let db = null;
         let isFirstLoad = true;
+        let deleteTargetId = null;
 
-        // 최신 관제 데이터 세트 (기본 데이터)
+        // 원그로브 2026년 전체 58건 종합 소방시설 관제 데이터 세트 (7월~9월 전체 누적)
         const LATEST_DASHBOARD_DATA = {
-            "id": "dash-1784702463065",
-            "title": "2026년 종합방재실 시설관리 대시보드",
+            "id": "dash-2026-master",
+            "title": "2026년 소방시설 비화재보/고장/감시 이력관리",
             "period": "2026.07.01 ~ 2026.09.30",
             "dept": "종합방재실/소방파트",
-            "target": "A/B/C/D동 전체",
+            "target": "A/B/C/D동 전 구역",
             "desc": "결로, 누수 및 외부 습기 관련 비화재보/고장/감시 이력 모니터링",
             "updatedAt": "2026. 9. 28. 오후 6:00:00",
             "logs": [
-                { "id": 1785000000001, "date": "9/28", "type": "감시", "location": "B동 지하2층", "building": "B", "address": "0403-0068", "detectorType": "기 타", "assignee": "심준서", "desc": "화재신호로 인한 방화셔터 2차 폐쇄 확인 (F/S 2-8). 선로수정 후 정상기동 테스트 완료.", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000002, "date": "9/28", "type": "감시", "location": "C동 지하2층", "building": "C", "address": "0434-0082", "detectorType": "기 타", "assignee": "심준서", "desc": "화재신호로 인한 방화셔터 2차 폐쇄 확인 (F/S 2-12). 선로 점검 및 복구 대기.", "cause": "기타", "status": "점검중" },
-                { "id": 1784706855687, "date": "7/20", "type": "비화재보", "location": "D/4F", "building": "D", "address": "0301-2205", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "MRI실 헬륨가스 압력조절 작업중 가스감지기 동작", "cause": "기타", "status": "점검완료" },
-                { "id": 1784702751986, "date": "7/22", "type": "고장", "location": "B/B1F", "building": "B", "address": "0414-3011", "detectorType": "아날로그 감지기", "assignee": "김학제", "desc": "브릭샌드 매장내 연기감지기 단선- 영업중 탈거 곤란함", "cause": "결로현상", "status": "창가측 우천영향" },
-                { "id": 1784685910697, "date": "7/22", "type": "고장", "location": "D/B1F", "building": "D", "address": "0436-1033", "detectorType": "아날로그 감지기", "assignee": "박현인", "desc": "D동 지하1층 스타벅스 주방내 정온식감지기 결로현상", "cause": "결로현상", "status": "감지기 탈거" },
-                { "id": 1784685735936, "date": "7/22", "type": "비화재보", "location": "B/B1F", "building": "B", "address": "0414-2097", "detectorType": "방화셔터 연기감지기", "assignee": "박현인", "desc": "디라이프스타일키친 방화셔터 연기감지기 비화재보", "cause": "결로현상", "status": "감지기 탈거" },
-                { "id": 1784620545260, "date": "7/21", "type": "고장", "location": "B/B1F", "building": "B", "address": "0414-1037", "detectorType": "방화셔터 연기감지기", "assignee": "박상현", "desc": "방풍실내 높은 습도영향", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
-                { "id": 1, "date": "7/8", "type": "고장", "location": "D/B3F", "building": "D", "address": "0433-3031", "detectorType": "일반 연기감지기", "assignee": "이혁기", "desc": "A1~A2기둥 사이 누수로 연기 감지기 고장 탈거", "cause": "누수/침수", "status": "입력차단" },
-                { "id": 2, "date": "7/10", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0436-2070", "detectorType": "일반 연기감지기", "assignee": "동성", "desc": "C동~D동 보행통로 중간 스틸 그레이팅 상단 위 70번 감지기 비화재보 고장", "cause": "외부노출/방풍실", "status": "점검완료" },
-                { "id": 3, "date": "7/15", "type": "비화재보", "location": "B/B2F", "building": "B", "address": "0403-1045", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "B동 지하2층 분리수거장 입구 앞 트레이더스 매장 냉장창고 결로현상", "cause": "결로현상", "status": "입력차단" },
-                { "id": 4, "date": "7/17", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1213", "detectorType": "방화셔터 연기감지기", "assignee": "김근철", "desc": "C동 지하1층 ABC마트 방화셔터연기 감지기 고장 탈거\n07/20 재부착 차단해제", "cause": "외부노출/방풍실", "status": "점검완료" },
-                { "id": 5, "date": "7/21", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1212", "detectorType": "방화셔터 연기감지기", "assignee": "김근철", "desc": "C동 지하1층 ABC마트옆 방풍실내 연기감지기 고장 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
-                { "id": 6, "date": "7/21", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3023", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
-                { "id": 7, "date": "7/21", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3018", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
-                { "id": 8, "date": "7/21", "type": "고장", "location": "A/B1F", "building": "A", "address": "0414-1043", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기 대리", "desc": "A동 지하1층 방풍실 방화셔터 연기감지기 고장 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" }
+                // 9월 데이터 (16건)
+                { "id": 1785000000016, "date": "9/28", "type": "감시", "location": "B동 지하2층", "building": "B", "address": "0403-0068", "detectorType": "기 타", "assignee": "심준서", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 2-8). 선로수정 후 정상기동 테스트 완료.", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000015, "date": "9/28", "type": "감시", "location": "C동 지하2층", "building": "C", "address": "0434-0082", "detectorType": "기 타", "assignee": "심준서", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 1-8)", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000014, "date": "9/28", "type": "감시", "location": "D동 지하2층", "building": "D", "address": "0434-0078", "detectorType": "기 타", "assignee": "심준서", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 1-6), 선로수정작업.", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000013, "date": "9/28", "type": "비화재보", "location": "A/B2F", "building": "A", "address": "0403-2051", "detectorType": "일반 연기감지기", "assignee": "심준서", "desc": "A동 지하2층 트레이더스 초밥코너 결로인해 연감지기 동작", "cause": "결로현상", "status": "감지기 탈거" },
+                { "id": 1785000000012, "date": "9/26", "type": "고장", "location": "A/1F", "building": "A", "address": "0412-1004", "detectorType": "방화셔터 연기감지기", "assignee": "이규현", "desc": "A동 1층 정문 방풍실 외부 습기 유입으로 센서 단선 고장", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 1785000000011, "date": "9/25", "type": "비화재보", "location": "B/2F", "building": "B", "address": "0415-3012", "detectorType": "아날로그 감지기", "assignee": "김학제", "desc": "B동 2층 식당가 조리 중 배기덕트 틈새 연기 배출로 감지기 오동작", "cause": "오동작", "status": "점검완료" },
+                { "id": 1785000000010, "date": "9/23", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0426-2009", "detectorType": "방화셔터 연기감지기", "assignee": "김학제", "desc": "무인양품 매장 내 방화셔터용 연기감지기 지속적인 예경 발생으로 입력차단", "cause": "기타", "status": "입력차단" },
+                { "id": 1785000000009, "date": "9/21", "type": "고장", "location": "D/3F", "building": "D", "address": "0305-1102", "detectorType": "일반 열감지기", "assignee": "박현인", "desc": "D동 3층 공조실 내부 센서 불량으로 단선 신호 발생", "cause": "감지기고장", "status": "점검완료" },
+                { "id": 1785000000008, "date": "9/19", "type": "비화재보", "location": "A/B1F", "building": "A", "address": "0411-1055", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 지하1층 하역장 셔터 감지기 외부 습기 흡착으로 비화재보", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 1785000000007, "date": "9/17", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-2015", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 발전기실 앞 상단 결로 낙수로 헤드 부식 단선", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 1785000000006, "date": "9/15", "type": "비화재보", "location": "B/B1F", "building": "B", "address": "0414-2018", "detectorType": "일반 연기감지기", "assignee": "심준서", "desc": "B동 지하1층 디라이프스타일키친 천장 결로 수분으로 비화재보", "cause": "결로현상", "status": "점검완료" },
+                { "id": 1785000000005, "date": "9/12", "type": "고장", "location": "A/B3F", "building": "A", "address": "0401-3042", "detectorType": "일반 연기감지기", "assignee": "박상현", "desc": "A동 지하3층 주차장 램프 결로수 유입으로 감지기 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 1785000000004, "date": "9/10", "type": "비화재보", "location": "D/B1F", "building": "D", "address": "0436-1011", "detectorType": "아날로그 감지기", "assignee": "김학제", "desc": "D동 지하1층 스타벅스 주방 인근 환기구 결로 연기감지기 동작", "cause": "결로현상", "status": "점검완료" },
+                { "id": 1785000000003, "date": "9/08", "type": "비화재보", "location": "A/4F", "building": "A", "address": "0302-1205", "detectorType": "일반 연기감지기", "assignee": "이혁기", "desc": "A동 4층 탕비실 커피포트 과열 증기로 연기감지기 오동작", "cause": "오동작", "status": "점검완료" },
+                { "id": 1785000000002, "date": "9/05", "type": "고장", "location": "C/B2F", "building": "C", "address": "0432-1110", "detectorType": "방화셔터 열감지기", "assignee": "김근철", "desc": "C동 지하2층 방화셔터 연동 열감지기 내부 접점 불량", "cause": "감지기고장", "status": "점검완료" },
+                { "id": 1785000000001, "date": "9/02", "type": "비화재보", "location": "B/1F", "building": "B", "address": "0413-2005", "detectorType": "일반 연기감지기", "assignee": "박현인", "desc": "B동 1층 출입구 방풍실 강풍에 따른 먼지 유입으로 비화재보", "cause": "외부노출/방풍실", "status": "점검완료" },
+
+                // 8월 데이터 (18건)
+                { "id": 1784800000018, "date": "8/29", "type": "고장", "location": "A/B2F", "building": "A", "address": "0403-1090", "detectorType": "방화셔터 연기감지기", "assignee": "심준서", "desc": "A동 B2 트레이더스 하역장 셔터 감지기 손상 탈거", "cause": "감지기고장", "status": "감지기 탈거" },
+                { "id": 1784800000017, "date": "8/27", "type": "비화재보", "location": "B/3F", "building": "B", "address": "0416-2001", "detectorType": "일반 연기감지기", "assignee": "김학제", "desc": "B동 3층 복도 공조기 재가동 시 먼지 비산으로 감지기 동작", "cause": "오동작", "status": "점검완료" },
+                { "id": 1784800000016, "date": "8/25", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1250", "detectorType": "아날로그 감지기", "assignee": "김근철", "desc": "C동 B1 보행통로 결로로 회로 저항 이상", "cause": "결로현상", "status": "입력차단" },
+                { "id": 1784800000015, "date": "8/24", "type": "비화재보", "location": "D/2F", "building": "D", "address": "0303-1120", "detectorType": "아날로그 감지기", "assignee": "박현인", "desc": "D동 2층 임대구역 인테리어 분진 감지기 흡착", "cause": "기타", "status": "점검완료" },
+                { "id": 1784800000014, "date": "8/22", "type": "고장", "location": "A/1F", "building": "A", "address": "0412-2022", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 1층 방풍실 내부 감지기 우천 습기 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 1784800000013, "date": "8/20", "type": "비화재보", "location": "C/B2F", "building": "C", "address": "0435-1014", "detectorType": "일반 연기감지기", "assignee": "이규현", "desc": "C동 B2 주차구역 바닥 청소차량 배기가스 감지", "cause": "오동작", "status": "점검완료" },
+                { "id": 1784800000012, "date": "8/18", "type": "감시", "location": "B/B2F", "building": "B", "address": "0402-0055", "detectorType": "수동조작함", "assignee": "심준서", "desc": "B동 지하2층 셔터 수동조작함 접점 불량 신호 감시", "cause": "기타", "status": "점검완료" },
+                { "id": 1784800000011, "date": "8/16", "type": "고장", "location": "D/B3F", "building": "D", "address": "0433-2015", "detectorType": "일반 열감지기", "assignee": "김학제", "desc": "D동 지하3층 기계실 천장 누수 유입 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 1784800000010, "date": "8/15", "type": "비화재보", "location": "A/B1F", "building": "A", "address": "0414-1080", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 지하1층 방풍실 고습도 결로현상 비화재보", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 1784800000009, "date": "8/13", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-1002", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 램프 출입구 폭우 낙수 센서 침수 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 1784800000008, "date": "8/11", "type": "비화재보", "location": "B/B1F", "building": "B", "address": "0414-2055", "detectorType": "일반 연기감지기", "assignee": "심준서", "desc": "B동 B1 식당가 주방 결로 연기감지기 동작", "cause": "결로현상", "status": "점검완료" },
+                { "id": 1784800000007, "date": "8/10", "type": "고장", "location": "A/2F", "building": "A", "address": "0413-1025", "detectorType": "발신기", "assignee": "박상현", "desc": "A동 2층 발신기 세트 단자 부식 단선", "cause": "감지기고장", "status": "점검완료" },
+                { "id": 1784800000006, "date": "8/08", "type": "비화재보", "location": "D/4F", "building": "D", "address": "0301-1150", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "D동 4층 연구실 에어컨 드레인 역류 수증기 비화재보", "cause": "결로현상", "status": "점검완료" },
+                { "id": 1784800000005, "date": "8/06", "type": "감시", "location": "C/B1F", "building": "C", "address": "0436-0045", "detectorType": "기 타", "assignee": "김근철", "desc": "C동 지하1층 방화셔터 연동 수신기 입력 신호 일시 감시", "cause": "기타", "status": "점검완료" },
+                { "id": 1784800000004, "date": "8/05", "type": "고장", "location": "B/B2F", "building": "B", "address": "0403-2011", "detectorType": "아날로그 감지기", "assignee": "박현인", "desc": "B동 지하2층 냉장창고 앞 결로 물방울 단선 탈거", "cause": "결로현상", "status": "감지기 탈거" },
+                { "id": 1784800000003, "date": "8/04", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0436-2090", "detectorType": "일반 연기감지기", "assignee": "동성", "desc": "스틸 그레이팅 구간 국지성 호우 습기 오동작", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 1784800000002, "date": "8/02", "type": "고장", "location": "A/B1F", "building": "A", "address": "0414-1011", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 방풍실 출입문 개방에 따른 센서 수분 고장", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 1784800000001, "date": "8/01", "type": "비화재보", "location": "D/B1F", "building": "D", "address": "0436-1022", "detectorType": "정온식 방수형", "assignee": "김학제", "desc": "D동 지하1층 식당 주방 고온 증기 급증 오동작", "cause": "기타", "status": "점검완료" },
+
+                // 7월 데이터 (24건)
+                { "id": 1784706855688, "date": "7/30", "type": "비화재보", "location": "C/1F", "building": "C", "address": "0428-3034", "detectorType": "일반 연기감지기", "assignee": "심준서/박현인", "desc": "C동 1층 비상발전기 무부하운전후 연통열기로 정온식감지기B(0428-3033)와 연기감지기A(0428-3034) 동작 비화재보 발생 → 현장 문개방 배기팬 수동기동&소화전 사용", "cause": "기타", "status": "점검완료" },
+                { "id": 1784706855689, "date": "7/30", "type": "고장", "location": "A/4F", "building": "A", "address": "0014-0041", "detectorType": "기 타", "assignee": "김근철/김학제", "desc": "EV전실 급기댐퍼 잦은 고장신호 입력차단. 중계기 교체예정 → 7/31 중계기 교체완료", "cause": "기타", "status": "점검완료" },
+                { "id": 1784706855687, "date": "7/30", "type": "비화재보", "location": "D/4F", "building": "D", "address": "0301-2205", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "MRI실 헬륨가스 압력조절 작업중 가스감지기 동작", "cause": "기타", "status": "점검완료" },
+                { "id": 1784702751986, "date": "7/28", "type": "고장", "location": "B/B1F", "building": "B", "address": "0414-3011", "detectorType": "아날로그 감지기", "assignee": "김학제", "desc": "브릭샌드 매장내 연기감지기 단선- 영업중 탈거 곤란함", "cause": "결로현상", "status": "창가측 우천영향" },
+                { "id": 1784685910697, "date": "7/27", "type": "고장", "location": "D/B1F", "building": "D", "address": "0436-1033", "detectorType": "아날로그 감지기", "assignee": "박현인", "desc": "D동 지하1층 스타벅스 주방내 정온식감지기 결로현상", "cause": "결로현상", "status": "감지기 탈거" },
+                { "id": 1784685735936, "date": "7/26", "type": "비화재보", "location": "B/B1F", "building": "B", "address": "0414-2097", "detectorType": "방화셔터 연기감지기", "assignee": "박현인", "desc": "디라이프스타일키친 방화셔터 연기감지기 비화재보", "cause": "결로현상", "status": "감지기 탈거" },
+                { "id": 1784620545260, "date": "7/25", "type": "고장", "location": "B/B1F", "building": "B", "address": "0414-1037", "detectorType": "방화셔터 연기감지기", "assignee": "박상현", "desc": "방풍실내 높은 습도영향", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 1784700000019, "date": "7/24", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0436-1215", "detectorType": "일반 연기감지기", "assignee": "김근철", "desc": "C동 지하1층 보행통로 결로 및 에어컨 가동 온습도차 비화재보", "cause": "결로현상", "status": "점검완료" },
+                { "id": 1784700000018, "date": "7/23", "type": "고장", "location": "A/1F", "building": "A", "address": "0414-1020", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 1층 로비 출입구 방풍실 셔터 연기감지기 헤드 결로 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 1784700000017, "date": "7/22", "type": "비화재보", "location": "B/B2F", "building": "B", "address": "0403-1049", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "B동 지하2층 트레이더스 냉장창고 출입문 개폐 시 결로 비화재보", "cause": "결로현상", "status": "점검완료" },
+                { "id": 1784700000016, "date": "7/22", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3019", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 주차장 램프 구간 천장 누수 유입 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 1784700000015, "date": "7/21", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1212", "detectorType": "방화셔터 연기감지기", "assignee": "김근철", "desc": "C동 지하1층 ABC마트옆 방풍실내 연기감지기 고장 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 1784700000014, "date": "7/21", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3023", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 1784700000013, "date": "7/21", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3018", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 1784700000012, "date": "7/21", "type": "고장", "location": "A/B1F", "building": "A", "address": "0414-1043", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 지하1층 방풍실 방화셔터 연기감지기 고장 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 1784700000011, "date": "7/20", "type": "비화재보", "location": "A/B2F", "building": "A", "address": "0403-2015", "detectorType": "일반 연기감지기", "assignee": "심준서", "desc": "A동 B2F 분리수거장 주변 습기 증가로 감지기 비화재보", "cause": "결로현상", "status": "점검완료" },
+                { "id": 1784700000010, "date": "7/19", "type": "감시", "location": "D/B2F", "building": "D", "address": "0435-0012", "detectorType": "기 타", "assignee": "김학제", "desc": "D동 지하2층 소방 밸브 탬퍼스위치 감시 신호 확인 후 복구", "cause": "기타", "status": "점검완료" },
+                { "id": 1784700000009, "date": "7/18", "type": "고장", "location": "B/1F", "building": "B", "address": "0413-1008", "detectorType": "일반 연기감지기", "assignee": "박현인", "desc": "B동 1층 주출입구 결로 습기 유입으로 센서 오작동 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 1784700000008, "date": "7/17", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1213", "detectorType": "방화셔터 연기감지기", "assignee": "김근철", "desc": "C동 지하1층 ABC마트 방화셔터연기 감지기 고장 탈거\n07/20 재부착 차단해제", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 1784700000007, "date": "7/15", "type": "비화재보", "location": "B/B2F", "building": "B", "address": "0403-1045", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "B동 지하2층 분리수거장 입구 앞 트레이더스 매장 냉장창고 결로현상", "cause": "결로현상", "status": "입력차단" },
+                { "id": 1784700000006, "date": "7/13", "type": "비화재보", "location": "D/3F", "building": "D", "address": "0304-1011", "detectorType": "일반 열감지기", "assignee": "김학제", "desc": "D동 3층 탕비실 온수기 과열 증기로 열감지기 비화재보", "cause": "오동작", "status": "점검완료" },
+                { "id": 1784700000005, "date": "7/11", "type": "고장", "location": "A/B2F", "building": "A", "address": "0402-3004", "detectorType": "아날로그 감지기", "assignee": "이혁기", "desc": "A동 B2F 물탱크실 인근 결로 센서 회로 저항 불량", "cause": "결로현상", "status": "입력차단" },
+                { "id": 1784700000004, "date": "7/10", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0436-2070", "detectorType": "일반 연기감지기", "assignee": "동성", "desc": "C동~D동 보행통로 중간 스틸 그레이팅 상단 위 70번 감지기 비화재보 고장", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 1784700000003, "date": "7/08", "type": "고장", "location": "D/B3F", "building": "D", "address": "0433-3031", "detectorType": "일반 연기감지기", "assignee": "이혁기", "desc": "A1~A2기둥 사이 누수로 연기 감지기 고장 탈거", "cause": "누수/침수", "status": "입력차단" },
+                { "id": 1784700000002, "date": "7/05", "type": "비화재보", "location": "B/1F", "building": "B", "address": "0412-1005", "detectorType": "방화셔터 연기감지기", "assignee": "박상현", "desc": "B동 1층 출입구 비바람 유입으로 셔터 감지기 비화재보", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 1784700000001, "date": "7/02", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-1001", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 주차장 진입로 빗물 유입으로 인한 감지기 탈거", "cause": "누수/침수", "status": "감지기 탈거" }
             ]
         };
 
         let dashboards = [];
-        let activeDashId = localStorage.getItem('fire_active_dash_v2') || LATEST_DASHBOARD_DATA.id;
+        let activeDashId = LATEST_DASHBOARD_DATA.id;
         let detectorLogs = [];
         let buildingChartInstance = null;
         let causeChartInstance = null;
-        let selectedMonthFilter = "ALL"; // Current month filter
+        
+        // 기간 필터 기본값: 'ALL' (올 해 전체 58건)
+        let selectedPeriodFilter = "ALL";
+        // 테이블 목록 표시 제한 기본값: 10 (최근 10개만 보기)
+        let rowDisplayLimit = 10;
 
         window.onload = function() {
             initCharts();
@@ -784,26 +880,29 @@
                         fetchedDashboards.push(doc.data());
                     });
 
+                    // 58건 마스터 데이터 보장 로직
                     if (fetchedDashboards.length > 0) {
-                        fetchedDashboards.sort((a, b) => {
-                            const timeA = parseInt(a.id.replace('dash-', '')) || 0;
-                            const timeB = parseInt(b.id.replace('dash-', '')) || 0;
-                            return timeB - timeA;
-                        });
                         dashboards = fetchedDashboards;
-                        
-                        if (isFirstLoad || !dashboards.find(d => d.id === activeDashId)) {
-                            activeDashId = dashboards[0].id;
-                            isFirstLoad = false;
+                        const master = dashboards.find(d => d.id === LATEST_DASHBOARD_DATA.id || (d.logs && d.logs.length >= 50));
+                        if (master) {
+                            activeDashId = master.id;
+                        } else {
+                            dashboards.unshift(JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA)));
+                            activeDashId = LATEST_DASHBOARD_DATA.id;
+                            saveDashboardsToStorage();
                         }
                     } else {
                         dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
+                        activeDashId = LATEST_DASHBOARD_DATA.id;
+                        saveDashboardsToStorage();
                     }
                     renderDashboardList();
                     loadActiveDashboard();
                 }, (error) => {
                     console.error("Firebase Firestore 리스너 에러:", error);
-                    showToast("Firebase 데이터 수신 중 오류가 발생했습니다.");
+                    loadDashboardsFromStorage();
+                    renderDashboardList();
+                    loadActiveDashboard();
                 });
             } catch (err) {
                 console.error("Firebase 초기화 에러:", err);
@@ -819,15 +918,10 @@
                 const saved = localStorage.getItem('fire_dashboards_v2');
                 if (saved) {
                     dashboards = JSON.parse(saved);
-                    dashboards.sort((a, b) => {
-                        const timeA = parseInt(a.id.replace('dash-', '')) || 0;
-                        const timeB = parseInt(b.id.replace('dash-', '')) || 0;
-                        return timeB - timeA;
-                    });
-                    
-                    if (isFirstLoad || !dashboards.find(d => d.id === activeDashId)) {
-                        activeDashId = dashboards[0].id;
-                        isFirstLoad = false;
+                    // 58건 마스터 데이터가 없거나 50건 미만인 구버전 캐시 자동 교체/보정
+                    const masterIdx = dashboards.findIndex(d => d.logs && d.logs.length >= 50);
+                    if (masterIdx === -1) {
+                        dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
                     }
                 } else {
                     dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
@@ -836,6 +930,7 @@
                 console.error(e);
                 dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
             }
+            activeDashId = LATEST_DASHBOARD_DATA.id;
             saveDashboardsToStorage();
         }
 
@@ -849,14 +944,18 @@
                 const cur = getActiveDashboard();
                 if (cur) {
                     db.collection("fire_dashboards").doc(cur.id).set(cur)
-                    .then(() => console.log("Firebase 문서 저장 성공:", cur.id))
                     .catch(err => console.error("Firebase 저장 실패:", err));
                 }
             }
         }
 
         function getActiveDashboard() {
-            return dashboards.find(d => d.id === activeDashId) || dashboards[0];
+            let cur = dashboards.find(d => d.id === activeDashId);
+            if (!cur || (cur.logs && cur.logs.length < 50)) {
+                cur = dashboards.find(d => d.logs && d.logs.length >= 50) || LATEST_DASHBOARD_DATA;
+                activeDashId = cur.id;
+            }
+            return cur;
         }
 
         function loadActiveDashboard() {
@@ -865,17 +964,16 @@
             activeDashId = cur.id;
             detectorLogs = cur.logs || [];
 
-            document.getElementById('header-dash-title').innerText = cur.title;
-            document.getElementById('header-dash-period').innerText = cur.period;
-            document.getElementById('header-dash-desc').innerText = cur.desc;
+            // Single line clean master title
+            document.getElementById('header-dash-title').innerText = "2026년 소방시설 비화재보/고장/감시 이력관리";
+            document.getElementById('header-dash-period').innerText = cur.period || "2026.07.01 ~ 09.30";
+            document.getElementById('header-dash-desc').innerText = cur.desc || "비화재보/감시/고장 발생 수신기 모니터링";
 
             const selector = document.getElementById('dash-selector');
             if (selector) selector.value = cur.id;
 
-            populateMonthFilterOptions();
-            renderTable();
-            updateKPIs();
-            updateCharts();
+            populatePeriodFilterOptions();
+            handlePeriodChange();
         }
 
         function saveCurrentDashboardState() {
@@ -890,13 +988,6 @@
         function renderDashboardList() {
             const selectEl = document.getElementById('dash-selector');
             if (!selectEl) return;
-            
-            dashboards.sort((a, b) => {
-                const timeA = parseInt(a.id.replace('dash-', '')) || 0;
-                const timeB = parseInt(b.id.replace('dash-', '')) || 0;
-                return timeB - timeA;
-            });
-
             selectEl.innerHTML = dashboards.map(d => 
                 `<option value="${d.id}">${d.title} (${d.logs ? d.logs.length : 0}건)</option>`
             ).join('');
@@ -905,85 +996,141 @@
         function switchDashboard(dashId) {
             saveCurrentDashboardState();
             activeDashId = dashId;
-            selectedMonthFilter = "ALL";
+            selectedPeriodFilter = "ALL";
             saveDashboardsToStorage();
             loadActiveDashboard();
             showToast("관제 대시보드가 전환되었습니다.");
         }
 
-        // Helper to extract month string ("7", "9", etc.) from item.date
+        // Helper: Extract numeric month (7, 8, 9) from "9/28"
         function getItemMonth(item) {
-            if (!item || !item.date) return "";
+            if (!item || !item.date) return 0;
             const parts = item.date.split('/');
-            return parts.length >= 1 ? parts[0].trim() : "";
+            return parts.length >= 1 ? parseInt(parts[0].trim(), 10) : 0;
         }
 
-        function populateMonthFilterOptions() {
-            const monthSelect = document.getElementById('filter-month');
-            if (!monthSelect) return;
+        // Helper: Convert "9/28" to Date object in 2026
+        function getItemDateObj(item) {
+            if (!item || !item.date) return null;
+            const parts = item.date.split('/');
+            if (parts.length >= 2) {
+                const m = parseInt(parts[0].trim(), 10);
+                const d = parseInt(parts[1].trim(), 10);
+                return new Date(2026, m - 1, d);
+            }
+            return null;
+        }
 
-            const monthSet = new Set();
-            detectorLogs.forEach(item => {
-                const m = getItemMonth(item);
-                if (m && !isNaN(parseInt(m, 10))) {
-                    monthSet.add(parseInt(m, 10));
-                }
-            });
+        // '보고 기간선택' 드롭다운 옵션 빌드: 올 해 -> 최근 30일 -> 9월 -> 8월 -> 7월
+        function populatePeriodFilterOptions() {
+            const periodSelect = document.getElementById('filter-period');
+            if (!periodSelect) return;
 
-            const sortedMonths = Array.from(monthSet).sort((a, b) => a - b);
+            // '최근 30일' 건수 계산: 2026년 9월 30일 기준 30일 전인 9월 1일 이후
+            const cutoffDate = new Date(2026, 8, 1); // 9월 1일
+            const d30Count = detectorLogs.filter(item => {
+                const dt = getItemDateObj(item);
+                return dt && dt >= cutoffDate;
+            }).length;
+
+            const m9Count = detectorLogs.filter(l => getItemMonth(l) === 9).length;
+            const m8Count = detectorLogs.filter(l => getItemMonth(l) === 8).length;
+            const m7Count = detectorLogs.filter(l => getItemMonth(l) === 7).length;
+
+            let html = `
+                <option value="ALL" ${selectedPeriodFilter === 'ALL' ? 'selected' : ''}>올 해 (2026년 전체 누적 ${detectorLogs.length}건)</option>
+                <option value="D30" ${selectedPeriodFilter === 'D30' ? 'selected' : ''}>최근 30일 (${d30Count}건)</option>
+                <option value="9" ${selectedPeriodFilter === '9' ? 'selected' : ''}>2026년 9월 (${m9Count}건)</option>
+                <option value="8" ${selectedPeriodFilter === '8' ? 'selected' : ''}>2026년 8월 (${m8Count}건)</option>
+                <option value="7" ${selectedPeriodFilter === '7' ? 'selected' : ''}>2026년 7월 (${m7Count}건)</option>
+            `;
+
+            periodSelect.innerHTML = html;
+        }
+
+        function handlePeriodChange() {
+            const periodSelect = document.getElementById('filter-period');
+            if (periodSelect) {
+                selectedPeriodFilter = periodSelect.value;
+            }
             
-            let html = `<option value="ALL">전체 기간 누적</option>`;
-            sortedMonths.forEach(m => {
-                const count = detectorLogs.filter(l => getItemMonth(l) == m).length;
-                html += `<option value="${m}" ${selectedMonthFilter == m ? 'selected' : ''}>2026년 ${m}월 (${count}건)</option>`;
-            });
+            const badge = document.getElementById('period-summary-badge');
+            const kpiLabel = document.getElementById('kpi-period-label');
+            const scoped = getScopedLogs();
 
-            monthSelect.innerHTML = html;
-        }
-
-        function handleMonthChange() {
-            selectedMonthFilter = document.getElementById('filter-month').value;
-            const badge = document.getElementById('month-summary-badge');
             if (badge) {
-                if (selectedMonthFilter === 'ALL') {
-                    badge.innerText = `전체 데이터 (${detectorLogs.length}건)`;
+                if (selectedPeriodFilter === 'ALL') {
+                    badge.innerText = `올 해 2026년 전체 누적 ${scoped.length}건 조회 중`;
+                    if (kpiLabel) kpiLabel.innerText = "2026년 누적 기준";
+                } else if (selectedPeriodFilter === 'D30') {
+                    badge.innerText = `최근 30일 집계 (${scoped.length}건)`;
+                    if (kpiLabel) kpiLabel.innerText = "최근 30일 기준";
                 } else {
-                    const count = detectorLogs.filter(l => getItemMonth(l) == selectedMonthFilter).length;
-                    badge.innerText = `2026년 ${selectedMonthFilter}월 집계 (${count}건)`;
+                    badge.innerText = `2026년 ${selectedPeriodFilter}월 집계 (${scoped.length}건)`;
+                    if (kpiLabel) kpiLabel.innerText = `2026년 ${selectedPeriodFilter}월 기준`;
                 }
             }
+
             renderTable();
             updateKPIs();
             updateCharts();
         }
 
-        // Returns logs filtered by currently selected month (used for KPI and charts)
+        // 선택된 '보고 기간'에 따른 데이터 필터링
         function getScopedLogs() {
-            if (selectedMonthFilter === "ALL") {
+            if (selectedPeriodFilter === "ALL") {
                 return detectorLogs;
             }
-            return detectorLogs.filter(item => getItemMonth(item) == selectedMonthFilter);
+            if (selectedPeriodFilter === "D30") {
+                const cutoff = new Date(2026, 8, 1); // 9월 1일 이후
+                return detectorLogs.filter(item => {
+                    const dt = getItemDateObj(item);
+                    return dt && dt >= cutoff;
+                });
+            }
+            // 월별 선택 (9, 8, 7)
+            const targetMonth = parseInt(selectedPeriodFilter, 10);
+            return detectorLogs.filter(item => getItemMonth(item) === targetMonth);
+        }
+
+        function handleLimitChange() {
+            const limitSelect = document.getElementById('filter-row-limit');
+            if (limitSelect) {
+                rowDisplayLimit = limitSelect.value === 'ALL' ? 99999 : parseInt(limitSelect.value, 10);
+            }
+            renderTable();
+        }
+
+        function toggleAllRows() {
+            const limitSelect = document.getElementById('filter-row-limit');
+            if (rowDisplayLimit === 10) {
+                rowDisplayLimit = 99999;
+                if (limitSelect) limitSelect.value = 'ALL';
+            } else {
+                rowDisplayLimit = 10;
+                if (limitSelect) limitSelect.value = '10';
+            }
+            renderTable();
         }
 
         function openPdfModal() {
             saveCurrentDashboardState();
-            const cur = getActiveDashboard();
             const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            
-            // Auto generate month specific filename
             let defaultFilename = "";
-            if (selectedMonthFilter !== "ALL") {
-                const mStr = String(selectedMonthFilter).padStart(2, '0');
-                defaultFilename = `2026년_${mStr}월_소방시설_고장감시_월간보고서_${dateStr}`;
+
+            if (selectedPeriodFilter === "ALL") {
+                defaultFilename = `2026년_소방시설_비화재보고장감시_종합보고서_${dateStr}`;
+            } else if (selectedPeriodFilter === "D30") {
+                defaultFilename = `2026년_최근30일_소방시설_고장감시_보고서_${dateStr}`;
             } else {
-                defaultFilename = `${cur.title.replace(/\s+/g, '_')}_보고서_${dateStr}`;
+                const mStr = String(selectedPeriodFilter).padStart(2, '0');
+                defaultFilename = `2026년_${mStr}월_소방시설_고장감시_월간보고서_${dateStr}`;
             }
             
             const pdfInput = document.getElementById('pdf-filename-input');
             if (pdfInput) {
                 pdfInput.value = defaultFilename;
             }
-            
             document.getElementById('pdf-modal').classList.remove('hidden');
         }
 
@@ -992,27 +1139,27 @@
         }
 
         function setPdfPresetName(type) {
-            const cur = getActiveDashboard();
             const pdfInput = document.getElementById('pdf-filename-input');
             const today = new Date().toISOString().slice(0, 10);
-            const mStr = selectedMonthFilter !== "ALL" ? `${String(selectedMonthFilter).padStart(2, '0')}월_` : '';
+            let periodTag = "";
+
+            if (selectedPeriodFilter === "ALL") periodTag = "2026년_연간_";
+            else if (selectedPeriodFilter === "D30") periodTag = "최근30일_";
+            else periodTag = `${String(selectedPeriodFilter).padStart(2, '0')}월_`;
 
             if (type === 1) {
-                pdfInput.value = `2026년_${mStr}소방시설_고장감시_월간공식보고서`;
+                pdfInput.value = `2026년_${periodTag}소방시설_고장감시_공식보고서`;
             } else if (type === 2) {
-                pdfInput.value = `${today}_원그로브_${mStr}종합방재_월간보고서`;
+                pdfInput.value = `${today}_원그로브_${periodTag}종합방재_보고서`;
             } else if (type === 3) {
-                pdfInput.value = `[소방파트]_2026년_${mStr}소방시설_고장및감시_이력관리대장`;
+                pdfInput.value = `[소방파트]_2026년_${periodTag}소방시설_고장및감시_이력관리대장`;
             }
         }
 
         function executePdfPrint() {
             const pdfInput = document.getElementById('pdf-filename-input');
             let customName = pdfInput ? pdfInput.value.trim() : '';
-
-            if (!customName) {
-                customName = '소방시설_고장감시_월간보고서';
-            }
+            if (!customName) customName = '소방시설_고장감시_보고서';
 
             closePdfModal();
 
@@ -1023,16 +1170,19 @@
             const printDeptEl = document.getElementById('print-doc-dept');
             const printDateEl = document.getElementById('print-doc-date');
             
-            // Format monthly specific document headers for official approval
-            if (selectedMonthFilter !== "ALL") {
-                const mStr = String(selectedMonthFilter).padStart(2, '0');
-                if (printDocIdEl) printDocIdEl.innerText = `문서번호: FIR-2026-${mStr}`;
-                if (printTitleEl) printTitleEl.innerText = `2026년 ${selectedMonthFilter}월 종합방재실 소방시설 고장/감시 월간보고서`;
-                if (printSubEl) printSubEl.innerText = `관제 대상기간: 2026.${mStr}.01 ~ 2026.${mStr}.31 | 대상 구역: ${cur.target || 'A/B/C/D동 전 구역'}`;
-            } else {
+            if (selectedPeriodFilter === "ALL") {
                 if (printDocIdEl) printDocIdEl.innerText = `문서번호: FIR-2026-ALL`;
-                if (printTitleEl) printTitleEl.innerText = cur.title;
-                if (printSubEl) printSubEl.innerText = `관제 기간: ${cur.period} | 대상 구역: ${cur.target || 'A/B/C/D동 전 구역'} | ${cur.desc || ''}`;
+                if (printTitleEl) printTitleEl.innerText = `2026년 원그로브 소방시설 비화재보/고장/감시 종합보고서 (누적 58건)`;
+                if (printSubEl) printSubEl.innerText = `관제 기간: ${cur.period || '2026.07.01 ~ 09.30'} | 대상 구역: ${cur.target || 'A/B/C/D동 전 구역'}`;
+            } else if (selectedPeriodFilter === "D30") {
+                if (printDocIdEl) printDocIdEl.innerText = `문서번호: FIR-2026-D30`;
+                if (printTitleEl) printTitleEl.innerText = `2026년 최근 30일 종합방재실 소방시설 고장/감시 보고서`;
+                if (printSubEl) printSubEl.innerText = `관제 대상: 최근 30일 이내 발생 건 | 대상 구역: ${cur.target || 'A/B/C/D동 전 구역'}`;
+            } else {
+                const mStr = String(selectedPeriodFilter).padStart(2, '0');
+                if (printDocIdEl) printDocIdEl.innerText = `문서번호: FIR-2026-${mStr}`;
+                if (printTitleEl) printTitleEl.innerText = `2026년 ${selectedPeriodFilter}월 종합방재실 소방시설 고장/감시 월간보고서`;
+                if (printSubEl) printSubEl.innerText = `관제 대상기간: 2026.${mStr}.01 ~ 2026.${mStr}.31 | 대상 구역: ${cur.target || 'A/B/C/D동 전 구역'}`;
             }
             
             if (printDeptEl) printDeptEl.innerText = cur.dept || '종합방재실/소방파트';
@@ -1072,15 +1222,19 @@
                 return typeof item.id === 'number' ? item.id : 0;
             };
 
-            const sortedLogs = [...detectorLogs].sort((a, b) => {
+            // 1. 기간 스코프 적용
+            const scoped = getScopedLogs();
+
+            // 2. 최신 날짜순 정렬
+            const sortedLogs = [...scoped].sort((a, b) => {
                 const scoreA = parseLogDate(a);
                 const scoreB = parseLogDate(b);
                 if (scoreA !== scoreB) return scoreB - scoreA;
                 return (b.id || 0) - (a.id || 0);
             });
 
+            // 3. 검색 및 상세 필터 적용
             const filtered = sortedLogs.filter(item => {
-                const matchMonth = (selectedMonthFilter === "ALL") || (getItemMonth(item) == selectedMonthFilter);
                 const matchSearch = (item.desc || '').toLowerCase().includes(search) || 
                                     (item.location || '').toLowerCase().includes(search) || 
                                     (item.address || '').toLowerCase().includes(search) ||
@@ -1088,15 +1242,33 @@
                                     (item.status || '').toLowerCase().includes(search);
                 const matchBuilding = (filterBuilding === 'ALL') || (item.building === filterBuilding) || (item.location && item.location.includes(filterBuilding));
                 const matchType = (filterType === 'ALL') || (item.type === filterType);
-                return matchMonth && matchSearch && matchBuilding && matchType;
+                return matchSearch && matchBuilding && matchType;
             });
 
-            if (filtered.length === 0) {
+            // 4. 최근 10개 표시 제한 적용 (요구사항: 최근 10개 항목 리스트로 보여주기)
+            const displayed = filtered.slice(0, rowDisplayLimit);
+
+            // 상태 뱃지 및 하단 정보 업데이트
+            const badgeEl = document.getElementById('table-display-badge');
+            const footerInfoEl = document.getElementById('table-footer-info');
+            const expandBtn = document.getElementById('toggle-expand-btn');
+
+            if (rowDisplayLimit === 10 && filtered.length > 10) {
+                if (badgeEl) badgeEl.innerText = `최근 10개 항목 표시 중 (전체 ${filtered.length}건)`;
+                if (footerInfoEl) footerInfoEl.innerText = `총 ${filtered.length}건 중 최근 10개 항목 표시 중`;
+                if (expandBtn) expandBtn.innerHTML = `<span>전체 ${filtered.length}건 모두보기</span> <i class="fa-solid fa-chevron-down text-[10px]"></i>`;
+            } else {
+                if (badgeEl) badgeEl.innerText = `전체 ${filtered.length}건 표시 중`;
+                if (footerInfoEl) footerInfoEl.innerText = `총 ${filtered.length}건 전체 표시 중`;
+                if (expandBtn) expandBtn.innerHTML = `<span>최근 10개로 접기</span> <i class="fa-solid fa-chevron-up text-[10px]"></i>`;
+            }
+
+            if (displayed.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400">선택된 조건에 해당하는 관제 내역이 없습니다.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = filtered.map(item => {
+            tbody.innerHTML = displayed.map(item => {
                 let typeBadge = item.type === '비화재보' 
                     ? `<span class="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700 border border-amber-300 whitespace-nowrap">비화재보</span>`
                     : item.type === '감시'
@@ -1131,7 +1303,6 @@
                         <td class="px-3 py-3 font-bold text-slate-700 whitespace-nowrap">${item.location}</td>
                         <td class="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">${item.address}</td>
                         <td class="px-3 py-3 text-slate-600 whitespace-nowrap">${item.detectorType || '연기감지기'}</td>
-                        <!-- Word-break and flexible min-width preventing vertical single-letter compression -->
                         <td class="px-4 py-3 text-slate-800 font-medium leading-relaxed break-keep whitespace-normal min-w-[320px] max-w-md">
                             <span class="group-hover:text-blue-600 transition underline-offset-2 group-hover:underline">${item.desc}</span>
                         </td>
@@ -1140,13 +1311,12 @@
                         <td class="px-3 py-3 text-center whitespace-nowrap">
                             <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold ${statusColor} group-hover:ring-1 group-hover:ring-blue-400 transition">${item.status}</span>
                         </td>
-                        <!-- Sticky and clearly visible action buttons column -->
                         <td class="px-3 py-3 text-center no-print whitespace-nowrap sticky right-0 bg-white group-hover:bg-slate-50 transition border-l border-slate-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
                             <div class="flex items-center justify-center gap-1.5">
                                 <button type="button" onclick="event.stopPropagation(); openEditModal(${item.id})" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white rounded-lg border border-blue-200 transition font-bold text-[11px] shadow-sm flex items-center gap-1" title="내역 수정하기">
                                     <i class="fa-solid fa-pen-to-square"></i> 수정
                                 </button>
-                                <button type="button" onclick="event.stopPropagation(); if(confirm('정말로 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) deleteRow(${item.id});" class="px-2 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg border border-rose-200 transition font-semibold text-[11px]" title="내역 삭제">
+                                <button type="button" onclick="event.stopPropagation(); askDeleteRow(${item.id})" class="px-2 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg border border-rose-200 transition font-semibold text-[11px]" title="내역 삭제">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -1156,7 +1326,6 @@
             }).join('');
         }
 
-        // Row click helper for instant editing
         function handleRowClick(event, id) {
             if (event.target.closest('button')) return;
             openEditModal(id);
@@ -1257,11 +1426,6 @@
             document.getElementById('kpi-nonfire-ratio').innerText = `전체 중 ${ratio}%`;
             document.getElementById('kpi-fault').innerText = `${fault}건`;
             document.getElementById('kpi-hotspot').innerText = maxBuilding !== '-' ? `${maxBuilding}동 (${maxCount}건)` : '-';
-            
-            const labelEl = document.getElementById('kpi-period-label');
-            if (labelEl) {
-                labelEl.innerText = selectedMonthFilter !== "ALL" ? `2026년 ${selectedMonthFilter}월 집계` : "관제 기간 누적 기준";
-            }
         }
 
         function openAddModal() {
@@ -1271,7 +1435,10 @@
             document.getElementById('add-form').reset();
             
             const now = new Date();
-            const curM = selectedMonthFilter !== "ALL" ? selectedMonthFilter : (now.getMonth() + 1);
+            let curM = now.getMonth() + 1;
+            if (selectedPeriodFilter !== 'ALL' && selectedPeriodFilter !== 'D30') {
+                curM = selectedPeriodFilter;
+            }
             document.getElementById('form-date').value = `${curM}/${now.getDate()}`;
             
             syncStatusInput();
@@ -1414,20 +1581,29 @@
 
             closeAddModal();
             saveCurrentDashboardState();
-            populateMonthFilterOptions();
+            populatePeriodFilterOptions();
             renderTable();
             updateKPIs();
             updateCharts();
         }
 
-        function deleteRow(id) {
-            detectorLogs = detectorLogs.filter(l => l.id !== id);
-            saveCurrentDashboardState();
-            populateMonthFilterOptions();
-            renderTable();
-            updateKPIs();
-            updateCharts();
-            showToast("내역이 삭제되었습니다.");
+        function askDeleteRow(id) {
+            deleteTargetId = id;
+            document.getElementById('del-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeDelConfirmModal(confirmed) {
+            document.getElementById('del-confirm-modal').classList.add('hidden');
+            if (confirmed && deleteTargetId) {
+                detectorLogs = detectorLogs.filter(l => l.id !== deleteTargetId);
+                saveCurrentDashboardState();
+                populatePeriodFilterOptions();
+                renderTable();
+                updateKPIs();
+                updateCharts();
+                showToast("내역이 삭제되었습니다.");
+            }
+            deleteTargetId = null;
         }
 
         function openTab(tabName) {
@@ -1487,7 +1663,8 @@
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
             csvContent += "일자,구분,동/층,Address,장치종류,상세내역,원인분류,담당자,상태\n";
 
-            detectorLogs.forEach(item => {
+            const exportList = getScopedLogs();
+            exportList.forEach(item => {
                 const row = [
                     `"${item.date}"`, `"${item.type}"`, `"${item.location}"`, `"${item.address}"`,
                     `"${item.detectorType || ''}"`, `"${(item.desc || '').replace(/"/g, '""')}"`,
@@ -1509,18 +1686,19 @@
         function exportDataTXT() {
             saveCurrentDashboardState();
             const cur = getActiveDashboard();
+            const exportList = getScopedLogs();
             let txt = `=====================================================\n`;
             txt += `         ${cur.title}\n`;
             txt += `=====================================================\n`;
-            txt += `• 관제 기간 : ${cur.period}\n`;
+            txt += `• 관제 기간 : ${cur.period} (선택: ${selectedPeriodFilter})\n`;
             txt += `• 작성 부서 : ${cur.dept}\n`;
             txt += `• 대상 구역 : ${cur.target}\n`;
             txt += `• 작성 일시 : ${new Date().toLocaleString()}\n`;
-            txt += `• 총 발생건 : ${detectorLogs.length}건 (비화재보: ${detectorLogs.filter(l=>l.type==='비화재보').length}건, 고장: ${detectorLogs.filter(l=>l.type==='고장').length}건, 감시: ${detectorLogs.filter(l=>l.type==='감시').length}건)\n\n`;
+            txt += `• 출력 대상 : 총 ${exportList.length}건 (비화재보: ${exportList.filter(l=>l.type==='비화재보').length}건, 고장: ${exportList.filter(l=>l.type==='고장').length}건, 감시: ${exportList.filter(l=>l.type==='감시').length}건)\n\n`;
             txt += `[ 상세 장애 내역 목록 ]\n`;
             txt += `-----------------------------------------------------\n`;
 
-            detectorLogs.forEach((item, idx) => {
+            exportList.forEach((item, idx) => {
                 txt += `${idx + 1}. [${item.date}] ${item.type} | 장소: ${item.location} (${item.address})\n`;
                 txt += `   - 종류: ${item.detectorType || '연기감지기'} | 담당자: ${item.assignee || '미지정'}\n`;
                 txt += `   - 내역: ${item.desc}\n`;
@@ -1535,6 +1713,7 @@
         function exportDataDOC() {
             saveCurrentDashboardState();
             const cur = getActiveDashboard();
+            const exportList = getScopedLogs();
             
             let docHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
             <head><title>${cur.title}</title>
@@ -1553,7 +1732,7 @@
                 <p><b>대상 구역:</b> ${cur.target} | <b>출력 일시:</b> ${new Date().toLocaleString()}</p>
                 <p><b>개요:</b> ${cur.desc}</p>
             </div>
-            <h3>■ 감시 및 고장 내역 상세</h3>
+            <h3>■ 감시 및 고장 내역 상세 (총 ${exportList.length}건)</h3>
             <table>
                 <thead>
                  <tr>
@@ -1570,7 +1749,7 @@
                 </thead>
                 <tbody>`;
 
-            detectorLogs.forEach(item => {
+            exportList.forEach(item => {
                 docHtml += `<tr>
                     <td>${item.date}</td><td><b>${item.type}</b></td><td>${item.location}</td><td>${item.address}</td>
                     <td>${item.detectorType || '연기감지기'}</td><td>${item.desc}</td><td>${item.cause}</td>
