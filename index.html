@@ -1,1342 +1,1615 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0f172a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>원그로브 소방시설 이력관리</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-<style>
-:root{
-  --bg:#f1f5f9;--card:#fff;--line:#e2e8f0;--line2:#cbd5e1;--text:#0f172a;--muted:#64748b;
-  --brand:#2563eb;--dark:#0f172a;--dark2:#1e293b;
-  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
-  --safe-l:env(safe-area-inset-left,0px);--safe-r:env(safe-area-inset-right,0px);
-}
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;font-family:Pretendard,-apple-system,'Malgun Gothic',sans-serif;background:var(--bg);color:var(--text);
-  font-size:14px;line-height:1.5;padding-bottom:calc(76px + var(--safe-b))}
-button{font:inherit;cursor:pointer;color:inherit}
-input,select,textarea{font:inherit;font-size:16px;color:inherit}
-.hidden{display:none!important}
-.muted{color:var(--muted)}.small{font-size:12px}.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
-.grow{flex:1}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>2026년 원그로브 종합방재실 고장/감시 이력관리 대시보드</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Pretendard Font -->
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+    
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
-/* ---------- 상단바 ---------- */
-.topbar{background:var(--dark);color:#fff;
-  padding:calc(10px + var(--safe-t)) calc(14px + var(--safe-r)) 10px calc(14px + var(--safe-l))}
-.topbar-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:10px}
-.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
-.brand-ic{width:38px;height:38px;border-radius:11px;background:var(--brand);display:grid;place-items:center;flex:none;font-size:17px}
-.brand h1{font-size:15px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800}
-.brand p{margin:1px 0 0;font-size:11px;color:#94a3b8;display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:#64748b;display:inline-block;flex:none}
-.sync-dot.ok{background:#10b981}.sync-dot.warn{background:#f59e0b;animation:blink 1.2s infinite}
-@keyframes blink{50%{opacity:.35}}
-.icon-btn{width:42px;height:42px;border-radius:11px;background:var(--dark2);border:1px solid #334155;color:#fff;display:grid;place-items:center;font-size:17px}
-.menu-wrap{position:relative}
-.menu{position:absolute;right:0;top:48px;background:#fff;color:var(--text);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.25);
-  min-width:240px;padding:6px;z-index:60}
-.menu button{display:flex;width:100%;gap:10px;align-items:center;padding:12px;border:0;background:none;border-radius:9px;text-align:left;font-size:14px}
-.menu button:hover,.menu button:active{background:#f1f5f9}
-.menu button i{width:18px;text-align:center;color:var(--muted)}
-.menu hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
-.desktop-tabs{display:none}
-.hide-mobile{display:none!important}
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
-/* ---------- 하단 탭 (모바일) ---------- */
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);
-  display:grid;grid-template-columns:repeat(4,1fr);padding:4px var(--safe-r) calc(4px + var(--safe-b)) var(--safe-l)}
-.bottom-nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;
-  font-size:11px;color:var(--muted);font-weight:600;position:relative;min-height:52px;justify-content:center}
-.bottom-nav button i{font-size:18px}
-.bottom-nav button.active{color:var(--brand)}
-.nav-badge{position:absolute;top:2px;left:calc(50% + 6px);background:#dc2626;color:#fff;border-radius:999px;font-size:10px;
-  min-width:18px;height:18px;padding:0 5px;display:grid;place-items:center;font-weight:800}
-.fab{position:fixed;right:calc(16px + var(--safe-r));bottom:calc(76px + var(--safe-b));z-index:41;width:58px;height:58px;border-radius:50%;
-  border:0;background:var(--brand);color:#fff;font-size:24px;box-shadow:0 8px 20px rgba(37,99,235,.45)}
-
-/* ---------- 본문 ---------- */
-main{max-width:1200px;margin:0 auto;padding:12px calc(12px + var(--safe-r)) 12px calc(12px + var(--safe-l))}
-section.tab>*+*{margin-top:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
-.sec-title{font-weight:800;font-size:14px;margin:0 0 10px;display:flex;align-items:center;gap:6px}
-.sec-title .sub{margin-left:auto;font-size:11px;font-weight:600;color:var(--muted)}
-.ctl{height:42px;border:1px solid var(--line2);border-radius:10px;padding:0 10px;background:#f8fafc;min-width:0}
-.btn{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line2);background:#fff;font-weight:700;
-  display:inline-flex;align-items:center;gap:6px;justify-content:center;font-size:14px;white-space:nowrap}
-.btn.sm{min-height:32px;padding:0 10px;font-size:12px;border-radius:8px}
-.btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
-.btn.danger{color:#dc2626;border-color:#fecaca;background:#fff1f2}
-.btn.ok{color:#047857;border-color:#a7f3d0;background:#ecfdf5}
-
-.periodbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.periodbar .ctl{flex:1 1 140px}
-.periodbar #p-info{flex:1 1 100%;font-size:12px;color:var(--muted);font-weight:600}
-
-.banner{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.banner p{margin:0;flex:1 1 220px;font-size:13px}
-
-/* KPI */
-.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 13px;min-width:0}
-.kpi[data-go]{cursor:pointer}
-.kpi .lbl{font-size:12px;color:var(--muted);font-weight:700;display:flex;gap:5px;align-items:center}
-.kpi .val{font-size:24px;font-weight:800;line-height:1.25;margin-top:2px}
-.kpi .sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kpi.amber{border-color:#fde68a}.kpi.amber .val{color:#d97706}
-.kpi.rose{border-color:#fecdd3}.kpi.rose .val{color:#e11d48}
-.kpi.indigo{border-color:#c7d2fe}.kpi.indigo .val{color:#4f46e5}
-.kpi.red{border-color:#fca5a5;background:#fff7f7}.kpi.red .val{color:#b91c1c}
-.kpi.purple{border-color:#e9d5ff}.kpi.purple .val{color:#7e22ce}
-.kpi.slate .val{color:#1e293b}
-
-.grid2{display:grid;gap:12px;grid-template-columns:1fr}
-.chart-box{position:relative;height:230px}
-.chart-box.tall{height:300px}
-.chart-note{font-size:11px;color:var(--muted);margin-top:6px}
-
-.rep-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);cursor:pointer}
-.rep-row:last-child{border-bottom:0}
-.rep-cnt{width:42px;height:42px;border-radius:11px;background:#f3e8ff;color:#7e22ce;display:grid;place-items:center;font-weight:800;flex:none}
-
-/* 뱃지 */
-.b{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid transparent;line-height:1.5}
-.b-nf{background:#fef3c7;color:#b45309;border-color:#fcd34d}
-.b-ft{background:#ffe4e6;color:#be123c;border-color:#fda4af}
-.b-wt{background:#e0e7ff;color:#4338ca;border-color:#a5b4fc}
-.b-ok{background:#d1fae5;color:#065f46;border-color:#6ee7b7}
-.b-block{background:#fef3c7;color:#92400e;border-color:#fbbf24}
-.b-remove{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
-.b-chk{background:#e0f2fe;color:#0369a1;border-color:#7dd3fc}
-.b-slate{background:#f1f5f9;color:#334155;border-color:#cbd5e1}
-.b-night{background:#1e293b;color:#e2e8f0}
-.b-rep{background:#f3e8ff;color:#7e22ce;border-color:#d8b4fe}
-
-/* 목록 */
-.filters{display:flex;flex-wrap:wrap;gap:8px}
-.filters .search{flex:1 1 100%;position:relative}
-.filters .search input{width:100%;padding-left:34px}
-.filters .search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8}
-.filters select{flex:1 1 calc(50% - 4px)}
-.list-head{display:flex;align-items:center;gap:8px;margin:2px 2px 8px;font-size:12px;color:var(--muted);font-weight:700}
-.table-view{display:none}
-.lc{background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:8px;cursor:pointer}
-.lc:active{background:#f8fafc}
-.lc.del,.row.del{opacity:.55}
-.lc-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.lc-dt{font-weight:700;font-size:13px}
-.lc-loc{margin-top:6px;font-size:13px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.lc-desc{margin-top:4px;font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
-.lc-foot{margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
-.il{font-size:11px;margin-top:4px;color:var(--muted)}
-.il b{color:#b91c1c}.il em{font-style:normal;color:#047857;font-weight:700}
-.empty{padding:28px 10px;text-align:center;color:#94a3b8;font-size:13px}
-
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:980px}
-th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{background:#f8fafc;font-size:12px;color:#334155;white-space:nowrap;position:sticky;top:0}
-tr.row{cursor:pointer}tr.row:hover{background:#eff6ff}
-td.nw{white-space:nowrap}
-td.desc-cell{min-width:260px;word-break:keep-all}
-.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#fff}
-
-/* 차단 현황 */
-.notice{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:12px 14px;font-size:13px}
-.notice b{color:#92400e}
-.bk-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.bk-sum div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
-.bk-sum b{display:block;font-size:22px;font-weight:800}
-.bk-sum span{font-size:11px;color:var(--muted);font-weight:700}
-.bk{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:8px}
-.days{min-width:62px;text-align:center;border-radius:12px;padding:8px 4px;background:#f1f5f9;color:#334155;flex:none}
-.days b{display:block;font-size:22px;font-weight:800;line-height:1.1}
-.days span{font-size:10px;font-weight:700}
-.days.warn{background:#fef3c7;color:#b45309}.days.crit{background:#fee2e2;color:#b91c1c}
-.bk-body{flex:1;min-width:0}
-.bk-act{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-
-/* 대책 */
-.plan-head{background:var(--dark);color:#fff;border-radius:14px;padding:16px}
-.plan-head h2{margin:2px 0 0;font-size:17px}
-.plan-head p{margin:4px 0 0;font-size:12px;color:#94a3b8}
-.pl{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.pl li{background:#f8fafc;border-radius:11px;padding:10px 12px;display:flex;gap:10px}
-.pl li i{margin-top:3px}
-.pl b{display:block;font-size:13px}
-.pl span{font-size:12px;color:var(--muted)}
-.ck{display:flex;gap:10px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line)}
-.ck:last-child{border-bottom:0}
-.ck-main{flex:1;min-width:0;font-size:13px}
-.ck-area{font-weight:800}
-.ck-sel{width:104px;flex:none;font-weight:700}
-.ck-sel.s-ok{background:#ecfdf5;color:#047857;border-color:#6ee7b7}
-.ck-sel.s-need{background:#fffbeb;color:#b45309;border-color:#fcd34d}
-.ck-sel.s-doing{background:#eff6ff;color:#1d4ed8;border-color:#93c5fd}
-
-/* 모달 (모바일: 바텀시트) */
-.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:70;display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:#fff;width:100%;max-width:640px;max-height:94vh;max-height:94dvh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden}
-.sheet-h{padding:14px 16px;background:var(--dark);color:#fff;display:flex;align-items:center;justify-content:space-between}
-.sheet-h h3{margin:0;font-size:16px}
-.sheet-h .x{background:none;border:0;color:#cbd5e1;font-size:22px;width:40px;height:40px}
-.sheet-b{padding:14px 16px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
-.sheet-f{padding:10px 16px calc(10px + var(--safe-b));border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;background:#fff}
-.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.field{min-width:0}
-.field.full{grid-column:1/-1}
-.field label,.flabel{display:block;font-size:12px;font-weight:800;color:#334155;margin-bottom:4px}
-.field input,.field select,.field textarea{width:100%;border:1px solid var(--line2);border-radius:10px;padding:9px 10px;background:#fff;min-height:44px}
-.field textarea{min-height:84px;resize:vertical}
-.hint{font-size:11px;color:#7e22ce;margin-top:3px;font-weight:700}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.chip{position:relative}
-.chip input{position:absolute;opacity:0;pointer-events:none}
-.chip span{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line2);font-size:13px;background:#fff}
-.chips.out .chip input:checked+span{background:#fee2e2;border-color:#ef4444;color:#b91c1c;font-weight:800}
-.chips.sup .chip input:checked+span{background:#dcfce7;border-color:#22c55e;color:#15803d;font-weight:800}
-.block-box{background:#f8fafc;border:1px dashed var(--line2);border-radius:12px;padding:10px;margin-bottom:10px}
-.block-box .fg{margin-bottom:0}
-
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(146px + var(--safe-b));background:var(--dark);color:#fff;
-  padding:11px 16px;border-radius:12px;font-size:13px;z-index:90;opacity:0;pointer-events:none;transition:opacity .25s;max-width:calc(100% - 32px);text-align:center}
-#toast.show{opacity:1}
-.print-header{display:none}
-
-/* ---------- 태블릿/PC ---------- */
-@media (min-width:768px){
-  body{padding-bottom:24px}
-  .topbar{position:sticky;top:0;z-index:30;padding-bottom:0}
-  .topbar-in{padding-bottom:10px}
-  .desktop-tabs{display:flex;max-width:1200px;margin:0 auto;gap:4px;border-top:1px solid #1e293b}
-  .desktop-tabs button{background:none;border:0;border-bottom:2px solid transparent;color:#94a3b8;padding:10px 12px;font-weight:700;font-size:13px;position:relative}
-  .desktop-tabs button.active{color:#60a5fa;border-color:#3b82f6}
-  .desktop-tabs .nav-badge{position:static;display:inline-grid;margin-left:4px}
-  .hide-mobile{display:inline-flex!important}
-  .bottom-nav,.fab{display:none}
-  main{padding:18px 20px}
-  .kpis{grid-template-columns:repeat(4,1fr)}
-  .filters .search{flex:1 1 260px}
-  .filters select{flex:0 1 150px}
-  .periodbar .ctl{flex:0 1 170px}
-  .periodbar #p-info{flex:1 1 auto;text-align:right}
-  .table-view{display:block}
-  .list-cards{display:none}
-  .modal{align-items:center;padding:16px}
-  .sheet{border-radius:18px;max-height:90vh}
-  #toast{left:auto;right:20px;transform:none;bottom:20px}
-}
-@media (min-width:960px){
-  .grid2{grid-template-columns:1fr 1fr}
-  .bk-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .bk-list .bk{margin-bottom:0}
-}
-
-/* ---------- 인쇄 / PDF ---------- */
-body.printing section.tab{display:block!important}
-body.printing #tab-plan{display:none!important}
-@media print{
-  @page{size:A4 portrait;margin:10mm}
-  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-  body{background:#fff;padding:0;font-size:9.5pt}
-  .topbar,.bottom-nav,.fab,.periodbar,.filters,.no-print,#toast,.modal,.list-cards,.banner,.bk-act{display:none!important}
-  section.tab{display:block!important}
-  #tab-plan{display:none!important}
-  main{padding:0;max-width:none}
-  .print-header{display:block;border-bottom:2px solid #0f172a;padding-bottom:10px;margin-bottom:12px}
-  .card,.kpi,.bk{break-inside:avoid;box-shadow:none}
-  .kpis{grid-template-columns:repeat(4,1fr);gap:6px}
-  .kpi .val{font-size:16pt}
-  .grid2{grid-template-columns:1fr 1fr;gap:8px}
-  .chart-box,.chart-box.tall{height:170px}
-  .table-view{display:block!important}
-  .tbl-wrap{overflow:visible;border:0}
-  table{min-width:0;font-size:7.5pt}
-  th,td{border:1px solid #94a3b8;padding:3px 4px}
-  th{position:static}
-  .bk-list{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-  #tab-list,#tab-blocked{break-before:page}
-}
-</style>
+        /* Print & PDF Specific Styles for Official A4 Report */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 8mm 10mm 10mm 10mm;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            header, .no-print, button, select, input, .group, #toast, #add-modal, #dash-modal, #pdf-modal { 
+                display: none !important; 
+            }
+            body { 
+                background: #ffffff !important; 
+                color: #000000 !important; 
+                min-height: auto !important; 
+                font-size: 9pt !important; 
+            }
+            main { 
+                max-width: 100% !important; 
+                padding: 0 !important; 
+                margin: 0 !important; 
+            }
+            .bg-white, .bg-slate-900, .bg-slate-800 { 
+                background: #ffffff !important; 
+                color: #000000 !important; 
+                border: 1px solid #cbd5e1 !important; 
+                box-shadow: none !important; 
+            }
+            .text-white, .text-slate-200, .text-slate-300, .text-slate-400 { 
+                color: #0f172a !important; 
+            }
+            .print-header { 
+                display: block !important; 
+                border-bottom: 2px solid #0f172a; 
+                padding-bottom: 10px; 
+                margin-bottom: 14px; 
+            }
+            .print-break-avoid {
+                page-break-inside: avoid;
+            }
+            .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl { 
+                box-shadow: none !important; 
+            }
+            table { 
+                font-size: 8pt !important; 
+                width: 100% !important; 
+                border-collapse: collapse !important; 
+            }
+            th, td { 
+                border: 1px solid #94a3b8 !important; 
+                padding: 4px 5px !important; 
+                text-align: center !important;
+            }
+            th { 
+                background-color: #f1f5f9 !important; 
+                color: #0f172a !important; 
+                font-weight: bold !important;
+            }
+            canvas { 
+                max-height: 160px !important; 
+            }
+            .grid { 
+                display: flex !important; 
+                flex-wrap: wrap !important; 
+                gap: 8px !important; 
+            }
+            .grid > * { 
+                flex: 1 1 180px !important; 
+            }
+        }
+    </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
 
-<!-- 인쇄용 머리글 -->
-<div class="print-header">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-    <div>
-      <div style="font-size:9pt;color:#475569">소방방재 보고서 · 원그로브 종합방재실</div>
-      <div style="font-size:17pt;font-weight:800;margin-top:2px">비화재보·고장·감시 이력 보고</div>
-      <div style="font-size:9pt;color:#475569;margin-top:3px">조회 기간: <span id="pr-period"></span> · 출력일: <span id="pr-date"></span> · 작성: 종합방재실/소방파트</div>
-    </div>
-    <table style="min-width:0;width:auto;font-size:8pt;text-align:center">
-      <tr><th rowspan="2" style="width:22px">결<br>재</th><th style="width:60px">담당</th><th style="width:60px">검토</th><th style="width:60px">승인</th></tr>
-      <tr><td style="height:40px"></td><td></td><td></td></tr>
-    </table>
-  </div>
-</div>
-
-<header class="topbar">
-  <div class="topbar-in">
-    <div class="brand">
-      <div class="brand-ic"><i class="fa-solid fa-fire-extinguisher"></i></div>
-      <div style="min-width:0">
-        <h1>원그로브 소방시설 이력관리</h1>
-        <p><span id="sync-dot" class="sync-dot"></span><span id="sync-text">연결 중…</span></p>
-      </div>
-    </div>
-    <button class="btn primary hide-mobile" data-action="add"><i class="fa-solid fa-plus"></i> 이력 추가</button>
-    <div class="menu-wrap">
-      <button class="icon-btn" id="menu-btn" aria-label="메뉴"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-      <div class="menu hidden" id="menu">
-        <button data-menu="csv"><i class="fa-solid fa-file-csv"></i> CSV 내보내기 (엑셀)</button>
-        <button data-menu="doc"><i class="fa-solid fa-file-word"></i> DOC 내보내기 (워드)</button>
-        <button data-menu="print"><i class="fa-solid fa-file-pdf"></i> PDF 저장 / 인쇄 (PC 권장)</button>
-        <hr>
-        <button data-menu="backup"><i class="fa-solid fa-download"></i> JSON 전체 백업</button>
-        <button data-menu="import"><i class="fa-solid fa-upload"></i> JSON 백업 가져오기</button>
-        <button data-menu="legacy"><i class="fa-solid fa-clock-rotate-left"></i> 기존 대시보드 데이터 가져오기</button>
-        <hr>
-        <button data-menu="user"><i class="fa-solid fa-user-pen"></i> 작업자 이름 변경</button>
-      </div>
-    </div>
-  </div>
-  <nav class="desktop-tabs">
-    <button data-tab="dashboard"><i class="fa-solid fa-chart-pie"></i> 대시보드</button>
-    <button data-tab="list"><i class="fa-solid fa-list-ul"></i> 이력 목록</button>
-    <button data-tab="blocked"><i class="fa-solid fa-ban"></i> 차단·탈거 현황<span class="nav-badge hidden" data-badge></span></button>
-    <button data-tab="plan"><i class="fa-solid fa-shield-halved"></i> 재발방지 대책</button>
-  </nav>
-</header>
-
-<main>
-  <div class="card periodbar" id="periodbar">
-    <select id="p-key" class="ctl" aria-label="조회 기간">
-      <option value="m0">이번 달</option>
-      <option value="m1">지난 달</option>
-      <option value="d30">최근 30일</option>
-      <option value="m3">최근 3개월</option>
-      <option value="y">올해</option>
-      <option value="all">전체 기간</option>
-      <option value="custom">직접 지정</option>
-    </select>
-    <input type="date" id="p-from" class="ctl hidden" aria-label="시작일">
-    <input type="date" id="p-to" class="ctl hidden" aria-label="종료일">
-    <div id="p-info"></div>
-  </div>
-
-  <!-- ===== 대시보드 ===== -->
-  <section class="tab" id="tab-dashboard">
-    <div class="banner hidden" id="legacy-banner">
-      <i class="fa-solid fa-circle-info" style="color:#2563eb;font-size:20px"></i>
-      <p><b>등록된 이력이 없습니다.</b><br>기존(7월) 대시보드에 입력했던 데이터를 새 구조로 옮겨올 수 있습니다.</p>
-      <button class="btn primary" data-menu="legacy">기존 데이터 가져오기</button>
-    </div>
-
-    <div class="kpis" id="kpis"></div>
-
-    <div class="card">
-      <h2 class="sec-title"><i class="fa-solid fa-chart-column" style="color:#2563eb"></i> 발생 추이 <span class="sub" id="trend-unit"></span></h2>
-      <div class="chart-box"><canvas id="ch-trend"></canvas></div>
-    </div>
-
-    <div class="grid2">
-      <div class="card">
-        <h2 class="sec-title"><i class="fa-solid fa-building" style="color:#2563eb"></i> 동별·유형별 현황 <span class="sub">단위: 건</span></h2>
-        <div class="chart-box"><canvas id="ch-building"></canvas></div>
-      </div>
-      <div class="card">
-        <h2 class="sec-title"><i class="fa-solid fa-chart-pie" style="color:#6366f1"></i> 원인 분류</h2>
-        <div class="chart-box"><canvas id="ch-cause"></canvas></div>
-      </div>
-      <div class="card">
-        <h2 class="sec-title"><i class="fa-solid fa-moon" style="color:#334155"></i> 시간대별 발생 <span class="sub" id="hour-sub"></span></h2>
-        <div class="chart-box"><canvas id="ch-hour"></canvas></div>
-        <div class="chart-note">진한색 = 야간(23:00~익일 08:00) · 연동해제 단계 확대 판단 근거</div>
-      </div>
-      <div class="card">
-        <h2 class="sec-title"><i class="fa-solid fa-diagram-project" style="color:#dc2626"></i> 설비 연동 영향</h2>
-        <div class="chart-box tall"><canvas id="ch-interlock"></canvas></div>
-        <div class="chart-note">빨강 = 실제 출력되어 작동 · 초록 = 연동정지로 출력 차단</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2 class="sec-title"><i class="fa-solid fa-repeat" style="color:#7e22ce"></i> 반복 발생 Address Top 5 <span class="sub">누르면 해당 이력 조회</span></h2>
-      <div id="repeat-list"></div>
-    </div>
-  </section>
-
-  <!-- ===== 이력 목록 ===== -->
-  <section class="tab hidden" id="tab-list">
-    <div class="card filters">
-      <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="fl-q" class="ctl" type="search" placeholder="장소, 내역, Address, 담당자 검색"></div>
-      <select id="fl-building" class="ctl"><option value="ALL">전체 동</option></select>
-      <select id="fl-type" class="ctl"><option value="ALL">전체 구분</option></select>
-      <select id="fl-cause" class="ctl"><option value="ALL">전체 원인</option></select>
-      <select id="fl-state" class="ctl">
-        <option value="ALL">전체 상태</option>
-        <option value="open">미복구 (차단·탈거중)</option>
-        <option value="done">복구·조치완료</option>
-        <option value="night">야간 발생</option>
-        <option value="deleted">삭제된 항목</option>
-      </select>
-    </div>
-    <div>
-      <div class="list-head"><span id="list-count"></span><span class="grow"></span><span class="hide-mobile" style="font-weight:600">행을 누르면 수정창이 열립니다</span></div>
-      <div class="list-cards" id="list-cards"></div>
-      <div class="table-view"><div class="tbl-wrap">
-        <table>
-          <thead><tr>
-            <th>일시</th><th>구분</th><th>동/층</th><th>ADDRESS</th><th>장치 종류</th><th>상세 내역</th>
-            <th>원인</th><th>담당자</th><th>상태</th><th class="no-print">관리</th>
-          </tr></thead>
-          <tbody id="list-table"></tbody>
-        </table>
-      </div></div>
-    </div>
-  </section>
-
-  <!-- ===== 차단·탈거 현황 ===== -->
-  <section class="tab hidden" id="tab-blocked">
-    <div class="notice">
-      <b><i class="fa-solid fa-scale-balanced"></i> 소방시설 폐쇄·차단 시 행동요령 등에 관한 고시 제2조</b><br>
-      수신기 등 소방시설을 폐쇄·차단하는 경우 <b>기간을 최소화</b>하고, 재실자에게 <b>사유와 기간을 사전 공지</b>해야 합니다.
-      아래 목록은 조회 기간과 무관하게 <b>현재 복구되지 않은 전체 건</b>입니다.
-    </div>
-    <div class="bk-sum" id="bk-sum"></div>
-    <div class="bk-list" id="bk-list"></div>
-  </section>
-
-  <!-- ===== 재발방지 대책 ===== -->
-  <section class="tab hidden" id="tab-plan">
-    <div class="plan-head">
-      <div style="font-size:11px;color:#34d399;font-weight:800"><i class="fa-solid fa-shield-halved"></i> 종합 방재 대책</div>
-      <h2>비화재보·고장 재발방지 대책</h2>
-      <p>결로·누수·외부노출·공사분진 등 주요 원인별 설비 안정화 및 수신기 관리 방안</p>
-    </div>
-    <div class="grid2">
-      <div class="card">
-        <h3 class="sec-title"><span class="b b-nf">1</span> 단기 조치 (즉시 시행)</h3>
-        <ul class="pl">
-          <li><i class="fa-solid fa-umbrella" style="color:#3b82f6"></i><div><b>취약구간 방수 커버·유도판 설치</b><span>주차장 램프·스틸그레이팅 하부 연기감지기에 낙수 차단 커버 설치</span></div></li>
-          <li><i class="fa-solid fa-door-open" style="color:#6366f1"></i><div><b>방풍실 감지기 실내측 이설 (30~50cm)</b><span>외부 출입문 직풍·습기 직접 노출 위치에서 실내 구역으로 조정</span></div></li>
-          <li><i class="fa-solid fa-helmet-safety" style="color:#d97706"></i><div><b>공사 구역 감지기 보호조치</b><span>분진 작업 허가 시 보호커버 설치, 작업 종료 즉시 제거·확인</span></div></li>
-          <li><i class="fa-solid fa-rotate-left" style="color:#10b981"></i><div><b>수신기 차단해제 절차 매뉴얼화</b><span>원인 해소 후 즉시 전압·저항 측정 및 입력차단 해제, 본 대시보드에 복구일시 기록</span></div></li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3 class="sec-title"><span class="b b-wt">2</span> 중장기 개선 (구조 개선)</h3>
-        <ul class="pl">
-          <li><i class="fa-solid fa-faucet-drip" style="color:#f43f5e"></i><div><b>방수형 / 아날로그 감지기 교체</b><span>냉장창고·상습 습기 구역에 방수형 또는 결로 보정형 감지기 도입</span></div></li>
-          <li><i class="fa-solid fa-wind" style="color:#0ea5e9"></i><div><b>에어커튼·제습기 설치</b><span>냉장창고 출입구 온습도차 감소 및 지하층 제습 강화</span></div></li>
-          <li><i class="fa-solid fa-fill-drip" style="color:#f59e0b"></i><div><b>천장 균열 인젝션 방수</b><span>주차장 램프·지하3층 슬래브 누수 지점 근본 보수</span></div></li>
-          <li><i class="fa-solid fa-repeat" style="color:#7e22ce"></i><div><b>반복 발생 Address 우선 개선</b><span>대시보드 반복 Top 5를 교체·이설 대상 선정 근거로 활용</span></div></li>
-        </ul>
-      </div>
-    </div>
-    <div class="card">
-      <h3 class="sec-title"><i class="fa-solid fa-list-check" style="color:#10b981"></i> 예방점검 체크리스트 <span class="sub" id="ck-updated"></span></h3>
-      <div id="check-list"></div>
-    </div>
-  </section>
-</main>
-
-<!-- 모바일 하단 탭 -->
-<nav class="bottom-nav">
-  <button data-tab="dashboard"><i class="fa-solid fa-chart-pie"></i>대시보드</button>
-  <button data-tab="list"><i class="fa-solid fa-list-ul"></i>이력</button>
-  <button data-tab="blocked"><i class="fa-solid fa-ban"></i>차단현황<span class="nav-badge hidden" data-badge></span></button>
-  <button data-tab="plan"><i class="fa-solid fa-shield-halved"></i>대책</button>
-</nav>
-<button class="fab" data-action="add" aria-label="이력 추가"><i class="fa-solid fa-plus"></i></button>
-
-<!-- 이력 입력/수정 -->
-<div class="modal hidden" id="form-modal" role="dialog" aria-modal="true">
-  <form class="sheet" id="log-form" autocomplete="off">
-    <div class="sheet-h"><h3 id="form-title">이력 등록</h3><button type="button" class="x" data-close aria-label="닫기">&times;</button></div>
-    <div class="sheet-b">
-      <input type="hidden" id="f-id">
-      <div class="fg">
-        <div class="field"><label for="f-date">발생 일자 *</label><input type="date" id="f-date" required></div>
-        <div class="field"><label for="f-time">발생 시각</label><input type="time" id="f-time"></div>
-        <div class="field"><label for="f-type">구분 *</label><select id="f-type"></select></div>
-        <div class="field"><label for="f-det">장치 종류</label><select id="f-det"></select></div>
-        <div class="field"><label for="f-bld">동 *</label><select id="f-bld" required><option value="">선택</option></select></div>
-        <div class="field"><label for="f-floor">층 *</label><select id="f-floor" required><option value="">선택</option></select></div>
-        <div class="field"><label for="f-addr">Address</label><input type="text" id="f-addr" class="mono" placeholder="예: 0436-1215" autocapitalize="off" spellcheck="false"><div class="hint hidden" id="addr-hint"></div></div>
-        <div class="field"><label for="f-cause">추정 원인</label><select id="f-cause"></select></div>
-        <div class="field full"><label for="f-desc">상세 내역 *</label><textarea id="f-desc" required placeholder="위치, 현장 확인 결과, 특이사항"></textarea></div>
-      </div>
-      <span class="flabel">연동 영향 — 실제 출력되어 작동한 설비</span>
-      <div class="chips out" id="chips-out"></div>
-      <span class="flabel">연동 영향 — 연동정지로 출력이 차단된 설비</span>
-      <div class="chips sup" id="chips-sup"></div>
-      <div class="fg">
-        <div class="field"><label for="f-status">조치 상태 *</label><select id="f-status"></select></div>
-        <div class="field"><label for="f-assignee">담당자/조치자</label><input type="text" id="f-assignee"></div>
-      </div>
-      <div class="block-box hidden" id="grp-block">
-        <div class="fg">
-          <div class="field full"><label for="f-bstart">차단·탈거 시작 일시</label><input type="datetime-local" id="f-bstart"></div>
-          <div class="field hidden" id="grp-end1"><label for="f-bend">복구(해제) 일시</label><input type="datetime-local" id="f-bend"></div>
-          <div class="field hidden" id="grp-end2"><label for="f-rby">복구 조치자</label><input type="text" id="f-rby"></div>
+    <!-- Printable Official Header (Visible ONLY when printing / PDF saving) -->
+    <div class="hidden print-header p-2">
+        <div class="flex justify-between items-start">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 bg-blue-100 text-blue-800 font-bold text-xs rounded border border-blue-300">소방방재 공식보고서</span>
+                    <span class="text-xs text-slate-500" id="print-doc-id">문서번호: FIR-2026-09</span>
+                </div>
+                <h1 class="text-2xl font-extrabold text-slate-900 mt-1" id="print-doc-title">2026년 종합방재실 소방시설 고장/감시 월간보고서</h1>
+                <p class="text-xs text-slate-600 mt-1" id="print-doc-subtitle">소방감지기 오동작(비화재보), 고장 및 감시 선로 복구 이력 현황</p>
+            </div>
+            
+            <!-- Approval Sign-off Box -->
+            <div class="flex border border-slate-500 text-center text-[10px] bg-white">
+                <div class="w-8 bg-slate-100 border-r border-slate-500 flex items-center justify-center font-bold text-slate-800 py-1">결<br>재</div>
+                <div class="w-16 border-r border-slate-500">
+                    <div class="border-b border-slate-400 py-0.5 bg-slate-50 font-semibold">담당</div>
+                    <div class="h-10 flex items-end justify-center pb-1 text-slate-400">인</div>
+                </div>
+                <div class="w-16 border-r border-slate-500">
+                    <div class="border-b border-slate-400 py-0.5 bg-slate-50 font-semibold">검토</div>
+                    <div class="h-10 flex items-end justify-center pb-1 text-slate-400">인</div>
+                </div>
+                <div class="w-16">
+                    <div class="border-b border-slate-400 py-0.5 bg-slate-50 font-semibold">승인</div>
+                    <div class="h-10 flex items-end justify-center pb-1 text-slate-400">인</div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="fg">
-        <div class="field full"><label for="f-note">비고</label><input type="text" id="f-note" placeholder="사전공지 여부, 후속조치 계획 등"></div>
-      </div>
-      <p class="muted small" id="f-meta" style="margin:0"></p>
+        <div class="flex justify-between items-center text-xs text-slate-600 mt-2.5 pt-2 border-t border-slate-200">
+            <p><strong>작성부서:</strong> <span id="print-doc-dept">종합방재실/소방파트</span> | <strong>보고대상:</strong> <span id="print-doc-target">A/B/C/D동 전 구역</span></p>
+            <p><strong>출력일시:</strong> <span id="print-doc-date">2026.09.30</span></p>
+        </div>
     </div>
-    <div class="sheet-f">
-      <button type="button" class="btn danger hidden" id="f-del"><i class="fa-solid fa-trash-can"></i> 삭제</button>
-      <span class="grow"></span>
-      <button type="button" class="btn" data-close>취소</button>
-      <button type="submit" class="btn primary"><i class="fa-solid fa-check"></i> 저장</button>
+
+    <!-- Top Sticky Header -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600 p-2.5 rounded-xl shadow-md text-white relative">
+                        <i class="fa-solid fa-cloud-showers-water text-xl"></i>
+                        <!-- Firebase Live Indicator -->
+                        <span id="firebase-indicator" class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-slate-900 hidden animate-pulse" title="Firebase 클라우드 실시간 연동 중"></span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg font-bold tracking-tight" id="header-dash-title">2026년 종합방재실 소방시설 고장/감시 이력관리 대시보드</h1>
+                            <span class="text-[11px] bg-blue-900 text-blue-200 px-2 py-0.5 rounded-full font-medium" id="header-dash-period">2026년 전체</span>
+                        </div>
+                        <p class="text-xs text-slate-400" id="header-dash-desc">결로, 누수 및 외부 습기 관련 비화재보/고장/감시 이력 모니터링</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
+                <!-- Dashboard Selector Dropdown -->
+                <div class="relative inline-block text-left">
+                    <select id="dash-selector" onchange="switchDashboard(this.value)" class="bg-slate-800 text-slate-100 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                        <!-- JS Populated -->
+                    </select>
+                </div>
+
+                <button onclick="openNewDashModal()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5 text-xs" title="새 관제 대시보드 만들기">
+                    <i class="fa-solid fa-folder-plus"></i> 신규 대시보드
+                </button>
+
+                <!-- PDF Monthly Export Button -->
+                <button onclick="openPdfModal()" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs ring-2 ring-amber-400/40" title="월별 공식 PDF 보고서 저장 및 인쇄">
+                    <i class="fa-solid fa-file-pdf"></i> PDF 보고서 / 인쇄
+                </button>
+
+                <!-- Export Dropdown -->
+                <div class="relative group">
+                    <button class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs">
+                        <i class="fa-solid fa-file-export"></i> 내보내기 <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </button>
+                    <div class="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 hidden group-hover:block group-focus-within:block z-50 text-xs text-slate-700">
+                        <button onclick="exportDataCSV()" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-file-csv text-emerald-600"></i> CSV (스프레드시트)
+                        </button>
+                        <button onclick="exportDataTXT()" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-file-lines text-blue-600"></i> TXT (텍스트 보고서)
+                        </button>
+                        <button onclick="exportDataDOC()" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-file-word text-indigo-600"></i> DOC (MS 워드 문서)
+                        </button>
+                        <button onclick="exportDataJSON()" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100">
+                            <i class="fa-solid fa-code text-amber-600"></i> JSON (전체 백업)
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="openAddModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-plus"></i> 이력 추가
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-slate-950 px-4 sm:px-8 border-t border-slate-800">
+            <div class="max-w-7xl mx-auto flex items-center gap-4 text-xs font-semibold">
+                <button onclick="openTab('dashboard')" id="tab-btn-dashboard" class="py-2.5 px-3 border-b-2 border-blue-500 text-blue-400 flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-chart-pie"></i> 모니터링 대시보드
+                </button>
+                <button onclick="openTab('plan')" id="tab-btn-plan" class="py-2.5 px-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-shield-halved"></i> 재발방지 대책보고
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+        <div id="tab-dashboard" class="space-y-6">
+            
+            <!-- Quick Month & Category Quick Bar -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3 no-print">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-calendar-days text-blue-600"></i> 보고서 대상 월 선택:
+                    </span>
+                    <select id="filter-month" onchange="handleMonthChange()" class="px-3 py-1.5 text-xs font-bold bg-blue-50 border border-blue-300 text-blue-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                        <option value="ALL">전체 기간 누적</option>
+                        <!-- Populated dynamically via JS -->
+                    </select>
+                </div>
+                <div class="text-xs text-slate-500 flex items-center gap-3">
+                    <span id="month-summary-badge" class="px-2.5 py-1 bg-slate-100 rounded-md font-semibold text-slate-700">전체 데이터 조회 중</span>
+                    <button onclick="openPdfModal()" class="text-amber-600 hover:text-amber-700 font-bold hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-file-pdf"></i> 이 기간으로 PDF 보고서 출력
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print-break-avoid">
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">총 발생 건수</p>
+                        <h3 class="text-3xl font-extrabold text-slate-800 mt-1" id="kpi-total">0건</h3>
+                        <span class="inline-block mt-2 text-xs text-slate-500" id="kpi-period-label">선택 기간 기준</span>
+                    </div>
+                    <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 text-xl">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-amber-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-amber-600">비화재보 (습기/결로)</p>
+                        <h3 class="text-3xl font-extrabold text-amber-600 mt-1" id="kpi-nonfire">0건</h3>
+                        <span class="inline-block mt-2 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md" id="kpi-nonfire-ratio">전체 중 0%</span>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 text-xl">
+                        <i class="fa-solid fa-bell-slash"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-rose-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-rose-600">고장 탈거</p>
+                        <h3 class="text-3xl font-extrabold text-rose-600 mt-1" id="kpi-fault">0건</h3>
+                        <span class="inline-block mt-2 text-xs text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">누수/침수 및 방풍실</span>
+                    </div>
+                    <div class="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center text-rose-600 text-xl">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-indigo-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">최다 발생 구역</p>
+                        <h3 class="text-2xl font-extrabold text-indigo-700 mt-1" id="kpi-hotspot">-</h3>
+                        <span class="inline-block mt-2 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">주요 취약 동/구역</span>
+                    </div>
+                    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 text-xl">
+                        <i class="fa-solid fa-building-circle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 print-break-avoid">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 lg:col-span-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-chart-bar text-blue-600"></i> 동별·유형별 발생 현황
+                        </h2>
+                        <span class="text-xs text-slate-400">단위: 건</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="buildingChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-indigo-600"></i> 세부 원인 분류
+                        </h2>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="causeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-slate-100">
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                <i class="fa-solid fa-list-ul text-blue-600"></i> 상세 감시/고장 이력 목록
+                            </h2>
+                            <span class="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-medium">
+                                <i class="fa-solid fa-mouse-pointer mr-1"></i>행을 누르면 바로 수정창이 열립니다
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">필터 및 검색을 통해 현황 파악 및 조치 이력 관리</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <div class="relative flex-1 sm:w-60">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="search-input" oninput="renderTable()" placeholder="장소, 내역, Address 검색..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <select id="filter-building" onchange="renderTable()" class="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="ALL">전체 동</option>
+                            <option value="A">A동</option>
+                            <option value="B">B동</option>
+                            <option value="C">C동</option>
+                            <option value="D">D동</option>
+                        </select>
+                        <select id="filter-type" onchange="renderTable()" class="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="ALL">전체 구분</option>
+                            <option value="비화재보">비화재보</option>
+                            <option value="고장">고장</option>
+                            <option value="감시">감시</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-xs text-left text-slate-600 min-w-[1150px]">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                            <tr>
+                                <th class="px-3 py-3 w-16 text-center">일자</th>
+                                <th class="px-3 py-3 w-20 text-center whitespace-nowrap">구분</th>
+                                <th class="px-3 py-3 w-28 whitespace-nowrap">동/층</th>
+                                <th class="px-3 py-3 w-28 whitespace-nowrap">ADDRESS</th>
+                                <th class="px-3 py-3 w-36 whitespace-nowrap">장치 종류</th>
+                                <th class="px-4 py-3 min-w-[320px] max-w-md">상세 내역</th>
+                                <th class="px-3 py-3 w-28 whitespace-nowrap">추정 원인</th>
+                                <th class="px-3 py-3 w-24 whitespace-nowrap">담당자</th>
+                                <th class="px-3 py-3 w-28 text-center whitespace-nowrap">현재 상태</th>
+                                <th class="px-3 py-3 w-32 text-center no-print whitespace-nowrap sticky right-0 bg-slate-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] border-l border-slate-200">내역 관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-100">
+                            <!-- JS Dynamically rendered rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-plan" class="hidden space-y-6">
+            <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-2 text-emerald-400 font-semibold text-xs mb-1 uppercase tracking-wider">
+                        <i class="fa-solid fa-shield-check"></i> 종합 방재 대책 보고서
+                    </div>
+                    <h2 class="text-xl font-bold">우천·결로·누수 감지기 비화재보 및 고장 재발방지 대책</h2>
+                    <p class="text-xs text-slate-400 mt-1">집중호우, 결로 및 습기 증가에 따른 장비 안정화 및 수신기 관리 방안</p>
+                </div>
+                <button onclick="openPdfModal()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-lg text-xs shadow-md flex items-center gap-2 transition">
+                    <i class="fa-solid fa-file-pdf text-amber-300"></i> PDF 보고서 출력 / 저장
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Short term -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm">1</div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm">단기 조치 사항 (즉시 시행)</h3>
+                            <p class="text-[11px] text-slate-500">취약 구간 즉시 보호 및 임시 유도 조치</p>
+                        </div>
+                    </div>
+                    <ul class="space-y-3 text-xs text-slate-700">
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-umbrella text-blue-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">취약구간 아크릴 방수 커버/유도판 설치</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">주차장 램프 및 스틸그레이팅 하부 연기감지기에 낙수 차단용 아크릴 캡 설치</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-door-open text-indigo-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">방풍실 감지기 실내측 이설 (30~50cm)</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">외부 출입문 직풍 및 습기 직접 노출 위치에서 실내 구역으로 위치 조정</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-rotate-left text-emerald-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">수신기 차단해제 매뉴얼화</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">우천 종료 후 즉시 전압/저항 측정 및 수신기 입력 차단 해제 정기점검</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Long term -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">2</div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm">중장기 개선 방안 (구조 개선)</h3>
+                            <p class="text-[11px] text-slate-500">설비 교체 및 상습 누수 부위 방수 공사</p>
+                        </div>
+                    </div>
+                    <ul class="space-y-3 text-xs text-slate-700">
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-faucet-drip text-rose-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">방수형(IP65) / 아날로그 감지기 교체</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">냉장창고 및 상습 습기 구역에 방수형 감지기 또는 결로 보정 아날로그 센서 도입</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-wind text-sky-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">에어커튼 및 산업용 제습기 설치</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">냉장창고 출입구 온습도차 감소용 에어커튼 가동 및 지하층 제습 강화</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5 bg-slate-50 p-3 rounded-xl">
+                            <i class="fa-solid fa-fill-drip text-amber-500 mt-0.5 text-sm"></i>
+                            <div>
+                                <span class="font-bold text-slate-800">천장 균열 주입식 인젝션 방수</span>
+                                <p class="text-slate-500 text-[11px] mt-0.5">주차장 램프 및 지하3층 슬래브 누수 지점 근본적 균열 보수 실시</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Checklist Table -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-emerald-600"></i> 우천 집중기간 소방시설 예방점검 체크리스트
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-600 border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                                <th class="p-2.5">구분</th>
+                                <th class="p-2.5">점검 항목</th>
+                                <th class="p-2.5">점검 기준</th>
+                                <th class="p-2.5">주기</th>
+                                <th class="p-2.5 text-center">상태</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <td class="p-2.5 font-bold text-slate-800">방풍실/출입구</td>
+                                <td class="p-2.5">감지기 표면 수분 축적 여부</td>
+                                <td class="p-2.5">외관 건조 상태 유지 및 아크릴 커버 유무</td>
+                                <td class="p-2.5">우천시 매일</td>
+                                <td class="p-2.5 text-center"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded font-bold">양호</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2.5 font-bold text-slate-800">주차장 램프</td>
+                                <td class="p-2.5">천장 누수 발생 및 감지기 유입 여부</td>
+                                <td class="p-2.5">누수 부위 감지기 이설 또는 드레인 유도</td>
+                                <td class="p-2.5">주 1회</td>
+                                <td class="p-2.5 text-center"><span class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-bold">점검필요</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2.5 font-bold text-slate-800">냉장창고</td>
+                                <td class="p-2.5">이슬점 형성 및 센서 오동작 여부</td>
+                                <td class="p-2.5">결로 방지용 방수형 교체 및 차단 모니터링</td>
+                                <td class="p-2.5">수시</td>
+                                <td class="p-2.5 text-center"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded font-bold">양호</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- PDF Export Modal (Monthly & Custom presets) -->
+    <div id="pdf-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-file-pdf text-amber-400"></i> 월별 보고서 PDF 파일명 및 저장 설정
+                </h3>
+                <button onclick="closePdfModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">저장할 PDF 파일명</label>
+                    <input type="text" id="pdf-filename-input" placeholder="파일명 입력" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium text-slate-800">
+                    <p class="text-[11px] text-slate-500 mt-1.5"><i class="fa-solid fa-circle-info text-blue-500 mr-1"></i>인쇄 창에서 'PDF로 저장' 선택 시 위 파일명으로 자동 생성됩니다.</p>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-[11px] text-slate-600">
+                    <p class="font-bold text-slate-800 flex items-center gap-1">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> 빠른 월별 보고서 파일명 프리셋:
+                    </p>
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        <button type="button" onclick="setPdfPresetName(1)" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-medium transition shadow-sm">
+                            [선택월] 월간 공식보고서
+                        </button>
+                        <button type="button" onclick="setPdfPresetName(2)" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-medium transition shadow-sm">
+                            [일자포함] 종합방재실 보고
+                        </button>
+                        <button type="button" onclick="setPdfPresetName(3)" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-medium transition shadow-sm">
+                            [부서/결재] 소방이력관리대장
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closePdfModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition">취소</button>
+                    <button type="button" onclick="executePdfPrint()" class="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-lg font-bold shadow flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-print"></i> PDF 저장 및 인쇄
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  </form>
-</div>
 
-<input type="file" id="import-file" accept="application/json,.json" class="hidden">
-<div id="toast"></div>
+    <!-- Safe Add / Edit Modal (Backdrop click auto-dismiss disabled to prevent data loss!) -->
+    <div id="add-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <!-- Inner dialog stops propagation so dragging out doesn't trigger closure -->
+        <div onclick="event.stopPropagation()" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 max-h-[90vh] flex flex-col">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+                <h3 class="font-bold text-base flex items-center gap-2" id="modal-title">
+                    <i class="fa-solid fa-plus-circle text-emerald-400"></i> 신규 고장/감시 내역 등록
+                </h3>
+                <button type="button" onclick="closeAddModal()" class="text-slate-400 hover:text-white transition p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
 
-<script>
-'use strict';
-/* =====================================================================
-   Firebase 설정 — 기존 프로젝트 그대로 사용
-   이력은 'fire_logs' 컬렉션에 1건 = 문서 1개로 저장됩니다(동시 입력 충돌 방지).
-   ※ Firestore 보안 규칙에서 fire_logs, fire_settings 컬렉션 접근을 허용해야 합니다.
-===================================================================== */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAorRIMbl0xwHp_2IjlBQDGKUQtLHH1Ph0",
-  authDomain: "as-manager-e59a5.firebaseapp.com",
-  projectId: "as-manager-e59a5",
-  storageBucket: "as-manager-e59a5.firebasestorage.app",
-  messagingSenderId: "352842334881",
-  appId: "1:352842334881:web:5edf5caa5f91e6e898e6e0",
-  measurementId: "G-X7VWX4SXBJ"
-};
-const COL_LOGS = 'fire_logs', COL_SETTINGS = 'fire_settings', COL_LEGACY = 'fire_dashboards';
-const LS = { logs:'wg_fire_logs_v3', user:'wg_fire_user', period:'wg_fire_period_v3', check:'wg_fire_checklist_v3', legacy:'fire_dashboards_v2' };
+            <!-- Quick Presets -->
+            <div class="bg-slate-50 px-6 py-2.5 border-b border-slate-200 flex items-center gap-2 overflow-x-auto text-xs flex-shrink-0">
+                <span class="font-semibold text-slate-500 whitespace-nowrap"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>빠른 템플릿:</span>
+                <button type="button" onclick="applyPreset('방풍실')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🚪 방풍실 습기</button>
+                <button type="button" onclick="applyPreset('램프')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🚗 램프 누수</button>
+                <button type="button" onclick="applyPreset('결로')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">❄️ 냉장창고 결로</button>
+                <button type="button" onclick="applyPreset('그레이팅')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🌧️ 스틸그레이팅 노출</button>
+            </div>
 
-/* ------------------------- 기준 코드 ------------------------- */
-const TYPES = ['비화재보','고장','감시'];
-const TYPE_CLS = {'비화재보':'b-nf','고장':'b-ft','감시':'b-wt'};
-const TYPE_COLOR = {'비화재보':'#f59e0b','고장':'#ef4444','감시':'#6366f1'};
-const BUILDINGS = ['A','B','C','D'];
-const FLOORS = ['B5F','B4F','B3F','B2F','B1F'].concat(Array.from({length:20},(_,i)=>(i+1)+'F')).concat(['RF','옥외','기타']);
-const CAUSES = ['누수/침수','결로현상','외부노출/방풍실','공사/분진','조리연기/흡연','가스/증기','조작실수','감지기고장','오동작','원인불명','기타'];
-const CAUSE_COLORS = ['#ef4444','#f59e0b','#06b6d4','#a16207','#fb7185','#14b8a6','#8b5cf6','#a855f7','#64748b','#94a3b8','#cbd5e1'];
-const DETECTORS = ['일반 연기감지기','일반 열감지기','아날로그 감지기','방화셔터 연기감지기','방화셔터 열감지기','정온식 방수형','불꽃감지기','가스감지기','발신기','수동조작함','중계기','비상콘센트','기타'];
-const STATUSES = ['점검중','입력차단','감지기 탈거','복구완료','조치완료(차단없음)'];
-const BLOCKED = ['입력차단','감지기 탈거'];
-const DONE = ['복구완료','조치완료(차단없음)'];
-const EQUIP = ['지구경종','비상방송','시각경보기','방화셔터','제연댐퍼','급/배기휀','공조대표','엘리베이터','배연창','프리액션'];
-const CHECK_STATES = ['양호','점검필요','조치중'];
-const CHECK_DEFAULT = [
-  {id:'c1',area:'방풍실/출입구',item:'감지기 표면 수분 축적 여부',std:'외관 건조 상태 유지 및 보호커버 유무',cycle:'우천시 매일',state:'양호'},
-  {id:'c2',area:'주차장 램프',item:'천장 누수 및 감지기 유입 여부',std:'누수 부위 감지기 이설 또는 드레인 유도',cycle:'주 1회',state:'점검필요'},
-  {id:'c3',area:'냉장창고',item:'이슬점 형성 및 센서 오동작 여부',std:'방수형 교체 및 차단 모니터링',cycle:'수시',state:'양호'},
-  {id:'c4',area:'공사 구역',item:'분진 작업 전 감지기 보호조치',std:'작업허가 시 보호커버 설치, 종료 후 즉시 제거',cycle:'작업시',state:'점검필요'},
-  {id:'c5',area:'종합방재실',item:'수신기 차단목록 ↔ 대시보드 미복구 목록 대조',std:'두 목록 불일치 0건 유지',cycle:'주 1회',state:'점검필요'}
-];
+            <form id="add-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-3.5 text-xs overflow-y-auto flex-1">
+                <input type="hidden" id="form-edit-id" value="">
 
-/* 기존 7월 대시보드 내장 데이터 (이관용) */
-const LEGACY_SEED = {
-  id:'dash-1784702463065', title:'2026년 원그로브 시설관리 대시보드', period:'2026.07.01 ~ 2026.07.31',
-  logs:[
-    {id:1784706855687,date:'7/20',type:'비화재보',location:'D/4F',building:'D',address:'0301-2205',detectorType:'아날로그 감지기',assignee:'심준서',desc:'MRI실 헬륨가스 압력조절 작업중 가스감지기 동작',cause:'기타',status:'점검완료'},
-    {id:1784702751986,date:'7/22',type:'고장',location:'B/B1F',building:'B',address:'0414-3011',detectorType:'아날로그 감지기',assignee:'김학제',desc:'브릭샌드 매장내 연기감지기 단선- 영업중 탈거 곤란함',cause:'결로현상',status:'창가측 우천영향'},
-    {id:1784685910697,date:'7/22',type:'고장',location:'D/B1F',building:'D',address:'0436-1033',detectorType:'아날로그 감지기',assignee:'박현인',desc:'D동 지하1층 스타벅스 주방내 정온식감지기 결로현상',cause:'결로현상',status:'감지기 탈거'},
-    {id:1784685735936,date:'7/22',type:'비화재보',location:'B/B1F',building:'B',address:'0414-2097',detectorType:'방화셔터 연기감지기',assignee:'박현인',desc:'디라이프스타일키친 방화셔터 연기감지기 비화재보',cause:'결로현상',status:'감지기 탈거'},
-    {id:1784620545260,date:'7/21',type:'고장',location:'B/B1F',building:'B',address:'0414-1037',detectorType:'방화셔터 연기감지기',assignee:'박상현',desc:'방풍실내 높은 습도영향',cause:'외부노출/방풍실',status:'감지기 탈거'},
-    {id:1,date:'7/8',type:'고장',location:'D/B3F',building:'D',address:'0433-3031',detectorType:'일반 연기감지기',assignee:'이혁기',desc:'A1~A2기둥 사이 누수로 연기 감지기 고장 탈거',cause:'누수/침수',status:'입력차단'},
-    {id:2,date:'7/10',type:'비화재보',location:'C/B1F',building:'C',address:'0436-2070',detectorType:'일반 연기감지기',assignee:'동성',desc:'C동~D동 보행통로 중간 스틸 그레이팅 상단 위 70번 감지기 비화재보 고장',cause:'외부노출/방풍실',status:'점검완료'},
-    {id:3,date:'7/15',type:'비화재보',location:'B/B2F',building:'B',address:'0403-1045',detectorType:'아날로그 감지기',assignee:'심준서',desc:'B동 지하2층 분리수거장 입구 앞 트레이더스 매장 냉장창고 결로현상',cause:'결로현상',status:'입력차단'},
-    {id:4,date:'7/17',type:'고장',location:'C/B1F',building:'C',address:'0436-1213',detectorType:'방화셔터 연기감지기',assignee:'김근철',desc:'C동 지하1층 ABC마트 방화셔터연기 감지기 고장 탈거\n07/20 재부착 차단해제',cause:'외부노출/방풍실',status:'점검완료'},
-    {id:5,date:'7/21',type:'고장',location:'C/B1F',building:'C',address:'0436-1212',detectorType:'방화셔터 연기감지기',assignee:'김근철',desc:'C동 지하1층 ABC마트옆 방풍실내 연기감지기 고장 탈거',cause:'외부노출/방풍실',status:'감지기 탈거'},
-    {id:6,date:'7/21',type:'고장',location:'C/1F',building:'C',address:'0428-3023',detectorType:'아날로그 감지기',assignee:'이규현',desc:'C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거',cause:'누수/침수',status:'감지기 탈거'},
-    {id:7,date:'7/21',type:'고장',location:'C/1F',building:'C',address:'0428-3018',detectorType:'아날로그 감지기',assignee:'이규현',desc:'C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거',cause:'누수/침수',status:'감지기 탈거'},
-    {id:8,date:'7/21',type:'고장',location:'A/B1F',building:'A',address:'0414-1043',detectorType:'방화셔터 연기감지기',assignee:'이혁기 대리',desc:'A동 지하1층 방풍실 방화셔터 연기감지기 고장 탈거',cause:'외부노출/방풍실',status:'감지기 탈거'}
-  ]
-};
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">발생 일자</label>
+                        <input type="text" id="form-date" required placeholder="예: 9/28 또는 7/22" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">구분</label>
+                        <select id="form-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold">
+                            <option value="고장">고장 (탈거/단선)</option>
+                            <option value="비화재보">비화재보 (오작동)</option>
+                            <option value="감시">감시 (수신기 이상)</option>
+                        </select>
+                    </div>
+                </div>
 
-/* ------------------------- 상태 ------------------------- */
-let logs = [];
-let mode = 'local';           // 'firebase' | 'local'
-let db = null;
-const syncInfo = { pending:false, cache:false };
-let checklist = JSON.parse(JSON.stringify(CHECK_DEFAULT));
-let checklistMeta = '';
-let user = lsGet(LS.user) || '';
-let period = lsGetJSON(LS.period) || { key:'y', from:'', to:'' };
-let currentTab = 'dashboard';
-const filters = { q:'', building:'ALL', type:'ALL', cause:'ALL', state:'ALL' };
-const charts = {};
-const ORIGINAL_TITLE = document.title;
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">동/층 (예: C/B1F)</label>
+                        <input type="text" id="form-location" required placeholder="예: C/B1F 또는 B동 지하2층" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Address 번호</label>
+                        <input type="text" id="form-address" required placeholder="예: 0436-1215" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                    </div>
+                </div>
 
-/* ------------------------- 유틸 ------------------------- */
-const $ = id => document.getElementById(id);
-function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-const pad = n => String(n).padStart(2,'0');
-function ymd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
-function hm(d){ return pad(d.getHours())+':'+pad(d.getMinutes()); }
-function nowLocal(){ const d=new Date(); return ymd(d)+'T'+hm(d); }
-function parseYmd(s){ const p=String(s).split('-').map(Number); return new Date(p[0],(p[1]||1)-1,p[2]||1); }
-function parseLocal(dt){
-  if(!dt) return null;
-  const [d,t] = String(dt).split('T');
-  const x = parseYmd(d);
-  if(t){ const [h,mi] = t.split(':').map(Number); x.setHours(h||0, mi||0, 0, 0); }
-  return x;
-}
-function daysBetween(a,b){ return Math.floor((b-a)/86400000); }
-function shortDate(s){ if(!s) return '-'; const p=s.split('-'); return (+p[1])+'/'+(+p[2]); }
-function fmtDT(dt){ if(!dt) return '-'; const [d,t]=dt.split('T'); return shortDate(d)+(t?' '+t:''); }
-function isNight(t){ if(!t) return false; const h=+String(t).split(':')[0]; return h>=23 || h<8; }
-function isOpenBlock(l){ return BLOCKED.includes(l.status) && !l.blockEnd; }
-function blockDays(l){
-  const s = parseLocal(l.blockStart || l.date); if(!s) return 0;
-  const e = l.blockEnd ? parseLocal(l.blockEnd) : new Date();
-  return Math.max(0, daysBetween(s, e));
-}
-function pct(a,b){ return b ? Math.round(a/b*100) : 0; }
-function uid(){ return 'log-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7); }
-function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
-function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-function lsGetJSON(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } }
-function sortKey(l){ return (l.date||'')+'T'+(l.time||'00:00'); }
-function locText(l){ return [l.building ? l.building+'동' : '', l.floor].filter(Boolean).join(' ') || '-'; }
-function opts(arr, sel){ return arr.map(v=>`<option value="${esc(v)}"${v===sel?' selected':''}>${esc(v)}</option>`).join(''); }
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">장치 종류</label>
+                        <select id="form-detector-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="방화셔터 연기감지기">방화셔터 연기감지기</option>
+                            <option value="방화셔터 열감지기">방화셔터 열감지기</option>
+                            <option value="일반 연기감지기">일반 연기감지기</option>
+                            <option value="일반 열감지기">일반 열감지기</option>
+                            <option value="발신기">발신기</option>
+                            <option value="수동조작함">수동조작함</option>
+                            <option value="비상콘센트">비상콘센트</option>
+                            <option value="아날로그 감지기">아날로그 감지기</option>
+                            <option value="정온식 방수형">정온식 방수형</option>
+                            <option value="기 타">기 타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">담당자/조치자</label>
+                        <input type="text" id="form-assignee" placeholder="예: 심준서" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
 
-function normalize(l){
-  const o = l || {};
-  return {
-    id: String(o.id || uid()),
-    date: o.date || ymd(new Date()),
-    time: o.time || '',
-    type: TYPES.includes(o.type) ? o.type : '고장',
-    building: BUILDINGS.includes(o.building) ? o.building : '',
-    floor: o.floor || '',
-    address: o.address || '',
-    detectorType: o.detectorType || '',
-    desc: o.desc || '',
-    cause: CAUSES.includes(o.cause) ? o.cause : '기타',
-    assignee: o.assignee || '',
-    status: STATUSES.includes(o.status) ? o.status : '점검중',
-    blockStart: o.blockStart || '',
-    blockEnd: o.blockEnd || '',
-    restoredBy: o.restoredBy || '',
-    outputs: Array.isArray(o.outputs) ? o.outputs : [],
-    suppressed: Array.isArray(o.suppressed) ? o.suppressed : [],
-    note: o.note || '',
-    createdBy: o.createdBy || '', createdAt: o.createdAt || '',
-    updatedBy: o.updatedBy || '', updatedAt: o.updatedAt || '',
-    deleted: !!o.deleted, deletedBy: o.deletedBy || '', deletedAt: o.deletedAt || '',
-    legacyId: o.legacyId ? String(o.legacyId) : ''
-  };
-}
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">상세 내역</label>
+                    <textarea id="form-desc" rows="3" required placeholder="위치, 특이사항 및 상세 원인 입력..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed"></textarea>
+                </div>
 
-function toast(msg){
-  const t=$('toast'); t.textContent=msg; t.classList.add('show');
-  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'), 2800);
-}
-function whoAmI(){
-  if(!user){
-    const n = prompt('작업자 이름을 입력하세요.\n(등록·수정 이력에 기록되며 이 기기에 저장됩니다)', '');
-    if(n && n.trim()){ user=n.trim(); lsSet(LS.user,user); setSync(); }
-  }
-  return user || '미기재';
-}
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">추정 원인 분류</label>
+                        <select id="form-cause" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="외부노출/방풍실">외부노출/방풍실</option>
+                            <option value="누수/침수">누수/침수</option>
+                            <option value="결로현상">결로현상</option>
+                            <option value="감지기고장">감지기고장</option>
+                            <option value="오동작">오동작</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">현재 상태 / 비고</label>
+                        <select id="form-status-select" onchange="syncStatusInput()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-1 font-semibold">
+                            <option value="감지기 탈거">감지기 탈거</option>
+                            <option value="입력차단">입력차단</option>
+                            <option value="점검중">점검중</option>
+                            <option value="점검완료">점검완료</option>
+                            <option value="창가측 우천영향">창가측 우천영향</option>
+                            <option value="custom">직접 입력...</option>
+                        </select>
+                        <input type="text" id="form-status" placeholder="상태 직접 입력" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hidden">
+                    </div>
+                </div>
 
-/* ------------------------- 데이터 계층 ------------------------- */
-function initData(){
-  if(typeof firebase === 'undefined' || !FIREBASE_CONFIG.apiKey){ startLocal(); return; }
-  try{
-    firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.firestore();
-    // 지하층 등 통신 불안정 구간 대비: 오프라인 캐시 (재연결 시 자동 전송)
-    db.enablePersistence({ synchronizeTabs:true }).catch(e=>console.warn('오프라인 캐시 미사용:', e.code));
-    mode = 'firebase';
-    db.collection(COL_LOGS).onSnapshot({ includeMetadataChanges:true }, snap=>{
-      logs = snap.docs.map(d => normalize(Object.assign({}, d.data(), { id:d.id })));
-      syncInfo.pending = snap.metadata.hasPendingWrites;
-      syncInfo.cache = snap.metadata.fromCache;
-      setSync(); renderAll();
-    }, err=>{
-      console.error(err);
-      toast('클라우드 연결 실패 → 이 기기에만 저장하는 모드로 전환합니다');
-      startLocal();
-    });
-    db.collection(COL_SETTINGS).doc('checklist').onSnapshot(doc=>{
-      if(doc.exists && Array.isArray(doc.data().items)){
-        checklist = doc.data().items;
-        checklistMeta = doc.data().updatedBy ? `최종 수정: ${doc.data().updatedBy} · ${fmtDT(String(doc.data().updatedAt||'').slice(0,16))}` : '';
-        renderChecklist();
-      }
-    }, ()=>{});
-  }catch(e){ console.error(e); startLocal(); }
-}
-function startLocal(){
-  mode='local'; db=null;
-  logs = (lsGetJSON(LS.logs) || []).map(normalize);
-  const c = lsGetJSON(LS.check); if(Array.isArray(c)) checklist = c;
-  setSync(); renderAll();
-}
-function persistLocal(){ lsSet(LS.logs, JSON.stringify(logs)); }
+                <div class="pt-3 flex justify-between items-center border-t border-slate-100">
+                    <span class="text-[11px] text-slate-400"><i class="fa-solid fa-lock mr-1"></i>창 바깥을 눌러도 내용이 지워지지 않습니다.</span>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeAddModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition">취소</button>
+                        <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold shadow flex items-center gap-1 transition">
+                            <i class="fa-solid fa-check"></i> <span id="submit-btn-text">저장하기</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
-function saveLog(obj){
-  const n = normalize(obj);
-  if(mode==='firebase'){
-    db.collection(COL_LOGS).doc(n.id).set(n).catch(e=>{ console.error(e); toast('저장 실패: '+(e.code||e.message)); });
-  }else{
-    const i = logs.findIndex(l=>l.id===n.id);
-    if(i>=0) logs[i]=n; else logs.push(n);
-    persistLocal(); renderAll();
-  }
-}
-function saveMany(arr){
-  const list = arr.map(normalize);
-  if(mode==='firebase'){
-    for(let i=0;i<list.length;i+=400){
-      const b = db.batch();
-      list.slice(i,i+400).forEach(o=>b.set(db.collection(COL_LOGS).doc(o.id), o));
-      b.commit().catch(e=>{ console.error(e); toast('가져오기 실패: '+(e.code||e.message)); });
-    }
-  }else{
-    list.forEach(n=>{ const i=logs.findIndex(l=>l.id===n.id); if(i>=0) logs[i]=n; else logs.push(n); });
-    persistLocal(); renderAll();
-  }
-}
-function saveChecklist(){
-  const meta = { items:checklist, updatedBy:whoAmI(), updatedAt:new Date().toISOString() };
-  checklistMeta = `최종 수정: ${meta.updatedBy} · ${fmtDT(nowLocal())}`;
-  lsSet(LS.check, JSON.stringify(checklist));
-  if(mode==='firebase') db.collection(COL_SETTINGS).doc('checklist').set(meta).catch(e=>toast('저장 실패: '+(e.code||e.message)));
-  renderChecklist();
-}
+    <!-- New Dashboard Modal -->
+    <div id="dash-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div onclick="event.stopPropagation()" class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-folder-plus text-blue-400"></i> 신규 관제 대시보드 만들기
+                </h3>
+                <button type="button" onclick="closeNewDashModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="dash-form" onsubmit="handleNewDashSubmit(event)" class="p-6 space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">관제 대시보드 제목</label>
+                    <input type="text" id="dash-title" required placeholder="예: 2026년 9월 종합방재 관제" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">관제 기간</label>
+                        <input type="text" id="dash-period" placeholder="2026.09.01 ~ 09.30" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">담당 부서</label>
+                        <input type="text" id="dash-dept" value="종합방재실/소방파트" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">대상 구역</label>
+                    <input type="text" id="dash-target" value="전체 동 (A/B/C/D동)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">관제 설명 / 개요</label>
+                    <textarea id="dash-desc" rows="2" placeholder="우천, 습기, 결로 관련 소방 감지기 장애 모니터링" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeNewDashModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition">취소</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium shadow flex items-center gap-1 transition">
+                        <i class="fa-solid fa-plus"></i> 대시보드 생성
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-function setSync(){
-  const dot=$('sync-dot'), t=$('sync-text');
-  let txt;
-  if(mode!=='firebase'){ dot.className='sync-dot'; txt='이 기기에만 저장'; }
-  else if(!navigator.onLine){ dot.className='sync-dot warn'; txt = syncInfo.pending ? '오프라인 · 전송 대기' : '오프라인'; }
-  else if(syncInfo.pending){ dot.className='sync-dot warn'; txt='전송 중…'; }
-  else { dot.className='sync-dot ok'; txt='클라우드 동기화'; }
-  t.textContent = txt + (user ? ' · '+user : '');
-}
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none z-50 text-xs">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toast-msg">처리 완료되었습니다.</span>
+    </div>
 
-/* ------------------------- 기간 ------------------------- */
-function periodRange(){
-  const t=new Date(), y=t.getFullYear(), m=t.getMonth();
-  switch(period.key){
-    case 'm0': return [ymd(new Date(y,m,1)), ymd(new Date(y,m+1,0))];
-    case 'm1': return [ymd(new Date(y,m-1,1)), ymd(new Date(y,m,0))];
-    case 'd30':{ const s=new Date(t); s.setDate(s.getDate()-29); return [ymd(s), ymd(t)]; }
-    case 'm3': return [ymd(new Date(y,m-2,1)), ymd(t)];
-    case 'y': return [y+'-01-01', y+'-12-31'];
-    case 'custom': return [period.from||'0000-01-01', period.to||'9999-12-31'];
-    default: return ['0000-01-01','9999-12-31'];
-  }
-}
-function periodLabel(){
-  const [a,b]=periodRange();
-  if(a==='0000-01-01' && b==='9999-12-31') return '전체 기간';
-  return (a==='0000-01-01'?'처음':a)+' ~ '+(b==='9999-12-31'?'현재':b);
-}
-function active(){ return logs.filter(l=>!l.deleted); }
-function inPeriod(l){ const [a,b]=periodRange(); return l.date>=a && l.date<=b; }
-function periodLogs(){ return active().filter(inPeriod); }
+    <script>
+        /* =========================================================================
+           [파이어베이스(Firebase) 데이터베이스 설정 영역]
+        ========================================================================= */
+        const firebaseConfig = {
+            apiKey: "AIzaSyAorRIMbl0xwHp_2IjlBQDGKUQtLHH1Ph0",
+            authDomain: "as-manager-e59a5.firebaseapp.com",
+            projectId: "as-manager-e59a5",
+            storageBucket: "as-manager-e59a5.firebasestorage.app",
+            messagingSenderId: "352842334881",
+            appId: "1:352842334881:web:5edf5caa5f91e6e898e6e0",
+            measurementId: "G-X7VWX4SXBJ"
+        };
 
-/* ------------------------- 렌더링 ------------------------- */
-function renderAll(){
-  const P = periodLogs();
-  $('p-info').textContent = `${periodLabel()} · ${P.length}건`;
-  $('legacy-banner').classList.toggle('hidden', logs.length>0);
-  renderKPIs(P); renderCharts(P); renderRepeat(P);
-  renderList(); renderBlocked(); renderChecklist();
-}
+        let useFirebase = false;
+        let db = null;
+        let isFirstLoad = true;
 
-function repeatMap(P){
-  const m=new Map();
-  P.forEach(l=>{
-    const a=(l.address||'').trim(); if(!a) return;
-    const v=m.get(a)||{address:a,count:0,last:'',loc:locText(l)};
-    v.count++; if(sortKey(l)>v.last){ v.last=sortKey(l); v.loc=locText(l); }
-    m.set(a,v);
-  });
-  return m;
-}
+        // 최신 관제 데이터 세트 (기본 데이터)
+        const LATEST_DASHBOARD_DATA = {
+            "id": "dash-1784702463065",
+            "title": "2026년 종합방재실 시설관리 대시보드",
+            "period": "2026.07.01 ~ 2026.09.30",
+            "dept": "종합방재실/소방파트",
+            "target": "A/B/C/D동 전체",
+            "desc": "결로, 누수 및 외부 습기 관련 비화재보/고장/감시 이력 모니터링",
+            "updatedAt": "2026. 9. 28. 오후 6:00:00",
+            "logs": [
+                { "id": 1785000000001, "date": "9/28", "type": "감시", "location": "B동 지하2층", "building": "B", "address": "0403-0068", "detectorType": "기 타", "assignee": "심준서", "desc": "화재신호로 인한 방화셔터 2차 폐쇄 확인 (F/S 2-8). 선로수정 후 정상기동 테스트 완료.", "cause": "기타", "status": "점검완료" },
+                { "id": 1785000000002, "date": "9/28", "type": "감시", "location": "C동 지하2층", "building": "C", "address": "0434-0082", "detectorType": "기 타", "assignee": "심준서", "desc": "화재신호로 인한 방화셔터 2차 폐쇄 확인 (F/S 2-12). 선로 점검 및 복구 대기.", "cause": "기타", "status": "점검중" },
+                { "id": 1784706855687, "date": "7/20", "type": "비화재보", "location": "D/4F", "building": "D", "address": "0301-2205", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "MRI실 헬륨가스 압력조절 작업중 가스감지기 동작", "cause": "기타", "status": "점검완료" },
+                { "id": 1784702751986, "date": "7/22", "type": "고장", "location": "B/B1F", "building": "B", "address": "0414-3011", "detectorType": "아날로그 감지기", "assignee": "김학제", "desc": "브릭샌드 매장내 연기감지기 단선- 영업중 탈거 곤란함", "cause": "결로현상", "status": "창가측 우천영향" },
+                { "id": 1784685910697, "date": "7/22", "type": "고장", "location": "D/B1F", "building": "D", "address": "0436-1033", "detectorType": "아날로그 감지기", "assignee": "박현인", "desc": "D동 지하1층 스타벅스 주방내 정온식감지기 결로현상", "cause": "결로현상", "status": "감지기 탈거" },
+                { "id": 1784685735936, "date": "7/22", "type": "비화재보", "location": "B/B1F", "building": "B", "address": "0414-2097", "detectorType": "방화셔터 연기감지기", "assignee": "박현인", "desc": "디라이프스타일키친 방화셔터 연기감지기 비화재보", "cause": "결로현상", "status": "감지기 탈거" },
+                { "id": 1784620545260, "date": "7/21", "type": "고장", "location": "B/B1F", "building": "B", "address": "0414-1037", "detectorType": "방화셔터 연기감지기", "assignee": "박상현", "desc": "방풍실내 높은 습도영향", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 1, "date": "7/8", "type": "고장", "location": "D/B3F", "building": "D", "address": "0433-3031", "detectorType": "일반 연기감지기", "assignee": "이혁기", "desc": "A1~A2기둥 사이 누수로 연기 감지기 고장 탈거", "cause": "누수/침수", "status": "입력차단" },
+                { "id": 2, "date": "7/10", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0436-2070", "detectorType": "일반 연기감지기", "assignee": "동성", "desc": "C동~D동 보행통로 중간 스틸 그레이팅 상단 위 70번 감지기 비화재보 고장", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 3, "date": "7/15", "type": "비화재보", "location": "B/B2F", "building": "B", "address": "0403-1045", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "B동 지하2층 분리수거장 입구 앞 트레이더스 매장 냉장창고 결로현상", "cause": "결로현상", "status": "입력차단" },
+                { "id": 4, "date": "7/17", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1213", "detectorType": "방화셔터 연기감지기", "assignee": "김근철", "desc": "C동 지하1층 ABC마트 방화셔터연기 감지기 고장 탈거\n07/20 재부착 차단해제", "cause": "외부노출/방풍실", "status": "점검완료" },
+                { "id": 5, "date": "7/21", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1212", "detectorType": "방화셔터 연기감지기", "assignee": "김근철", "desc": "C동 지하1층 ABC마트옆 방풍실내 연기감지기 고장 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
+                { "id": 6, "date": "7/21", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3023", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 7, "date": "7/21", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3018", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
+                { "id": 8, "date": "7/21", "type": "고장", "location": "A/B1F", "building": "A", "address": "0414-1043", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기 대리", "desc": "A동 지하1층 방풍실 방화셔터 연기감지기 고장 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" }
+            ]
+        };
 
-function renderKPIs(P){
-  const n=t=>P.filter(l=>l.type===t).length;
-  const total=P.length, nf=n('비화재보'), ft=n('고장'), wt=n('감시');
-  const open=active().filter(isOpenBlock);
-  let longest=null; open.forEach(l=>{ if(!longest || blockDays(l)>blockDays(longest)) longest=l; });
-  const timed=P.filter(l=>l.time), night=timed.filter(l=>isNight(l.time)).length;
-  const repCnt=[...repeatMap(P).values()].filter(v=>v.count>=2).length;
-  const bm={}; P.forEach(l=>{ if(l.building) bm[l.building]=(bm[l.building]||0)+1; });
-  const hot=Object.entries(bm).sort((a,b)=>b[1]-a[1])[0];
-  const cards=[
-    {cls:'slate',ic:'fa-list-check',lbl:'총 발생',val:total+'건',sub:hot?`최다 ${hot[0]}동 ${hot[1]}건`:'조회 기간 기준',go:'list'},
-    {cls:'amber',ic:'fa-bell-slash',lbl:'비화재보',val:nf+'건',sub:`전체 중 ${pct(nf,total)}%`},
-    {cls:'rose',ic:'fa-triangle-exclamation',lbl:'고장',val:ft+'건',sub:`전체 중 ${pct(ft,total)}%`},
-    {cls:'indigo',ic:'fa-eye',lbl:'감시',val:wt+'건',sub:`전체 중 ${pct(wt,total)}%`},
-    {cls:'red',ic:'fa-ban',lbl:'현재 미복구',val:open.length+'건',sub:`7일 이상 ${open.filter(l=>blockDays(l)>=7).length}건 · 전체 기간`,go:'blocked'},
-    {cls:'red',ic:'fa-hourglass-half',lbl:'최장 차단 경과',val:longest?blockDays(longest)+'일':'-',sub:longest?`${locText(longest)} ${longest.address}`:'미복구 없음',go:'blocked'},
-    {cls:'slate',ic:'fa-moon',lbl:'야간 발생 (23~08시)',val:timed.length?pct(night,timed.length)+'%':'-',sub:`시각 기록 ${timed.length}건 중 ${night}건`},
-    {cls:'purple',ic:'fa-repeat',lbl:'반복 발생 Address',val:repCnt+'곳',sub:'조회 기간 내 2회 이상'}
-  ];
-  $('kpis').innerHTML = cards.map(c=>`
-    <div class="kpi ${c.cls}"${c.go?` data-go="${c.go}"`:''}>
-      <div class="lbl"><i class="fa-solid ${c.ic}"></i>${esc(c.lbl)}</div>
-      <div class="val">${esc(c.val)}</div>
-      <div class="sub">${esc(c.sub)}</div>
-    </div>`).join('');
-}
+        let dashboards = [];
+        let activeDashId = localStorage.getItem('fire_active_dash_v2') || LATEST_DASHBOARD_DATA.id;
+        let detectorLogs = [];
+        let buildingChartInstance = null;
+        let causeChartInstance = null;
+        let selectedMonthFilter = "ALL"; // Current month filter
 
-/* ---- 차트 ---- */
-function mondayOf(d){ const x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; }
-function trendData(P){
-  let [a,b]=periodRange();
-  const ds=P.map(l=>l.date).sort();
-  if(!ds.length) return {labels:[],data:{},unit:''};
-  if(a==='0000-01-01') a=ds[0];
-  const today=ymd(new Date()), last=ds[ds.length-1];
-  if(b==='9999-12-31' || (b>today && b>last)) b = today>last ? today : last;
-  if(a>b) a=b;
-  const s=parseYmd(a), e=parseYmd(b), span=daysBetween(s,e)+1;
-  const unit = span<=45 ? 'day' : span<=200 ? 'week' : 'month';
-  const keys=[], labels=[];
-  if(unit==='day'){
-    for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){ keys.push(ymd(d)); labels.push((d.getMonth()+1)+'/'+d.getDate()); }
-  }else if(unit==='week'){
-    for(let d=mondayOf(s); d<=e; d.setDate(d.getDate()+7)){ keys.push(ymd(d)); labels.push((d.getMonth()+1)+'/'+d.getDate()+'~'); }
-  }else{
-    for(let d=new Date(s.getFullYear(),s.getMonth(),1); d<=e; d.setMonth(d.getMonth()+1)){ keys.push(d.getFullYear()+'-'+pad(d.getMonth()+1)); labels.push(String(d.getFullYear()).slice(2)+'.'+pad(d.getMonth()+1)); }
-  }
-  const keyOf = l => unit==='day' ? l.date : unit==='week' ? ymd(mondayOf(parseYmd(l.date))) : l.date.slice(0,7);
-  const data={}; TYPES.forEach(t=>data[t]=keys.map(()=>0));
-  P.forEach(l=>{ const i=keys.indexOf(keyOf(l)); if(i>=0) data[l.type][i]++; });
-  return {labels,data,unit:{day:'일별',week:'주별',month:'월별'}[unit]};
-}
-function mkChart(id,cfg){ const c=$(id); if(!c || typeof Chart==='undefined') return null; return new Chart(c.getContext('2d'), cfg); }
-function baseOpts(extra){
-  return Object.assign({ responsive:true, maintainAspectRatio:false, animation:{duration:250},
-    plugins:{ legend:{ position:'top', labels:{ boxWidth:10, font:{size:11} } } } }, extra||{});
-}
-function ensureCharts(){
-  if(typeof Chart==='undefined' || charts.trend) return;
-  Chart.defaults.font.family = "Pretendard, -apple-system, 'Malgun Gothic', sans-serif";
-  Chart.defaults.font.size = 11;
-  const stacked = { x:{stacked:true,grid:{display:false}}, y:{stacked:true,beginAtZero:true,ticks:{precision:0}} };
-  charts.trend = mkChart('ch-trend',{type:'bar',data:{labels:[],datasets:[]},options:baseOpts({scales:stacked})});
-  charts.building = mkChart('ch-building',{type:'bar',data:{labels:[],datasets:[]},options:baseOpts({scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{precision:0}}}})});
-  charts.cause = mkChart('ch-cause',{type:'doughnut',data:{labels:[],datasets:[]},options:baseOpts({plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:11}}}}})});
-  charts.hour = mkChart('ch-hour',{type:'bar',data:{labels:[],datasets:[]},options:baseOpts({plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:12}},y:{beginAtZero:true,ticks:{precision:0}}}})});
-  charts.interlock = mkChart('ch-interlock',{type:'bar',data:{labels:[],datasets:[]},options:baseOpts({indexAxis:'y',scales:{x:{stacked:true,beginAtZero:true,ticks:{precision:0}},y:{stacked:true,grid:{display:false}}}})});
-}
-function setChart(c,labels,datasets){ if(!c) return; c.data.labels=labels; c.data.datasets=datasets; c.update(); }
-function renderCharts(P){
-  ensureCharts();
-  if(typeof Chart==='undefined') return;
-  const tr=trendData(P);
-  $('trend-unit').textContent = tr.unit ? tr.unit+' · 단위: 건' : '';
-  setChart(charts.trend, tr.labels, TYPES.map(t=>({label:t,data:tr.data[t]||[],backgroundColor:TYPE_COLOR[t],borderRadius:4})));
+        window.onload = function() {
+            initCharts();
+            
+            if (firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "") {
+                initFirebase();
+            } else {
+                loadDashboardsFromStorage();
+                renderDashboardList();
+                loadActiveDashboard();
+            }
+        };
 
-  setChart(charts.building, BUILDINGS.map(b=>b+'동'),
-    TYPES.map(t=>({label:t,data:BUILDINGS.map(b=>P.filter(l=>l.building===b&&l.type===t).length),backgroundColor:TYPE_COLOR[t],borderRadius:5})));
+        function initFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                useFirebase = true;
 
-  const cc=CAUSES.map(c=>P.filter(l=>l.cause===c).length);
-  const idx=CAUSES.map((_,i)=>i).filter(i=>cc[i]>0);
-  setChart(charts.cause, idx.map(i=>CAUSES[i]), [{data:idx.map(i=>cc[i]),backgroundColor:idx.map(i=>CAUSE_COLORS[i]),borderWidth:1}]);
-  if(charts.cause){ charts.cause.options.plugins.legend.position = window.innerWidth<480 ? 'bottom' : 'right'; charts.cause.update(); }
+                const indicator = document.getElementById('firebase-indicator');
+                if (indicator) indicator.classList.remove('hidden');
 
-  const hours=Array.from({length:24},(_,h)=>h);
-  const hc=hours.map(h=>P.filter(l=>l.time && +l.time.split(':')[0]===h).length);
-  setChart(charts.hour, hours.map(h=>h+'시'), [{label:'발생',data:hc,backgroundColor:hours.map(h=>isNight(pad(h)+':00')?'#334155':'#60a5fa'),borderRadius:3}]);
-  const timed=P.filter(l=>l.time); const nN=timed.filter(l=>isNight(l.time)).length;
-  $('hour-sub').textContent = `주간 ${timed.length-nN} · 야간 ${nN} · 미기록 ${P.length-timed.length}`;
+                showToast("🔥 Firebase 클라우드 실시간 연동 모드로 실행되었습니다.");
 
-  setChart(charts.interlock, EQUIP, [
-    {label:'실제 출력',data:EQUIP.map(e=>P.filter(l=>l.outputs.includes(e)).length),backgroundColor:'#ef4444',borderRadius:3},
-    {label:'연동정지로 차단',data:EQUIP.map(e=>P.filter(l=>l.suppressed.includes(e)).length),backgroundColor:'#22c55e',borderRadius:3}
-  ]);
-}
+                db.collection("fire_dashboards").onSnapshot((snapshot) => {
+                    const fetchedDashboards = [];
+                    snapshot.forEach((doc) => {
+                        fetchedDashboards.push(doc.data());
+                    });
 
-function renderRepeat(P){
-  const top=[...repeatMap(P).values()].filter(v=>v.count>=2).sort((a,b)=>b.count-a.count||b.last.localeCompare(a.last)).slice(0,5);
-  $('repeat-list').innerHTML = top.length ? top.map(v=>`
-    <div class="rep-row" data-addr="${esc(v.address)}">
-      <div class="rep-cnt">${v.count}회</div>
-      <div style="flex:1;min-width:0"><b class="mono">${esc(v.address)}</b><div class="muted small">${esc(v.loc)} · 최근 ${esc(fmtDT(v.last.replace('T00:00','')))}</div></div>
-      <i class="fa-solid fa-chevron-right muted"></i>
-    </div>`).join('') : '<div class="empty">조회 기간 내 반복 발생 Address가 없습니다.</div>';
-}
+                    if (fetchedDashboards.length > 0) {
+                        fetchedDashboards.sort((a, b) => {
+                            const timeA = parseInt(a.id.replace('dash-', '')) || 0;
+                            const timeB = parseInt(b.id.replace('dash-', '')) || 0;
+                            return timeB - timeA;
+                        });
+                        dashboards = fetchedDashboards;
+                        
+                        if (isFirstLoad || !dashboards.find(d => d.id === activeDashId)) {
+                            activeDashId = dashboards[0].id;
+                            isFirstLoad = false;
+                        }
+                    } else {
+                        dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
+                    }
+                    renderDashboardList();
+                    loadActiveDashboard();
+                }, (error) => {
+                    console.error("Firebase Firestore 리스너 에러:", error);
+                    showToast("Firebase 데이터 수신 중 오류가 발생했습니다.");
+                });
+            } catch (err) {
+                console.error("Firebase 초기화 에러:", err);
+                useFirebase = false;
+                loadDashboardsFromStorage();
+                renderDashboardList();
+                loadActiveDashboard();
+            }
+        }
 
-/* ---- 목록 ---- */
-function statusBadge(l){
-  const s=l.status;
-  const cls = DONE.includes(s)?'b-ok' : s==='입력차단'?'b-block' : s==='감지기 탈거'?'b-remove' : s==='점검중'?'b-chk' : 'b-slate';
-  let extra='';
-  if(isOpenBlock(l)){ const d=blockDays(l); extra=` <span class="b ${d>=7?'b-remove':'b-slate'}">${d}일째</span>`; }
-  else if(s==='복구완료' && l.blockStart && l.blockEnd){ extra=` <span class="muted small">(${blockDays(l)}일 차단)</span>`; }
-  return `<span class="b ${cls}">${esc(s)}</span>${extra}`;
-}
-function nightBadge(l){ return isNight(l.time) ? '<span class="b b-night"><i class="fa-solid fa-moon"></i>야간</span>' : ''; }
-function interlockText(l){
-  const a=[];
-  if(l.outputs.length) a.push(`<b>출력:</b> ${esc(l.outputs.join(', '))}`);
-  if(l.suppressed.length) a.push(`<em>연동정지 차단:</em> ${esc(l.suppressed.join(', '))}`);
-  return a.length ? `<div class="il">${a.join(' · ')}</div>` : '';
-}
-function listLogs(){
-  const base = filters.state==='deleted' ? logs.filter(l=>l.deleted && inPeriod(l)) : periodLogs();
-  const q=filters.q.trim().toLowerCase();
-  return base.filter(l=>{
-    if(filters.building!=='ALL' && l.building!==filters.building) return false;
-    if(filters.type!=='ALL' && l.type!==filters.type) return false;
-    if(filters.cause!=='ALL' && l.cause!==filters.cause) return false;
-    if(filters.state==='open' && !isOpenBlock(l)) return false;
-    if(filters.state==='done' && !DONE.includes(l.status)) return false;
-    if(filters.state==='night' && !isNight(l.time)) return false;
-    if(q){
-      const hay=[l.desc,l.address,locText(l),l.assignee,l.status,l.detectorType,l.cause,l.note].join(' ').toLowerCase();
-      if(!hay.includes(q)) return false;
-    }
-    return true;
-  }).sort((a,b)=>sortKey(b).localeCompare(sortKey(a)) || (b.createdAt||'').localeCompare(a.createdAt||''));
-}
-function renderList(){
-  const L=listLogs();
-  const rep=repeatMap(periodLogs());
-  const repB=l=>{ const v=rep.get((l.address||'').trim()); return v&&v.count>=2 ? `<span class="b b-rep">반복 ${v.count}회</span>` : ''; };
-  $('list-count').textContent = `${L.length}건` + (filters.state==='deleted' ? ' (삭제된 항목)' : '');
-  if(!L.length){
-    $('list-cards').innerHTML='<div class="empty">조회된 이력이 없습니다.</div>';
-    $('list-table').innerHTML='<tr><td colspan="10" class="empty">조회된 이력이 없습니다.</td></tr>';
-    return;
-  }
-  $('list-cards').innerHTML = L.map(l=>`
-    <div class="lc${l.deleted?' del':''}" data-id="${esc(l.id)}">
-      <div class="lc-top"><span class="b ${TYPE_CLS[l.type]}">${esc(l.type)}</span>
-        <span class="lc-dt">${esc(shortDate(l.date))}${l.time?' '+esc(l.time):''}</span>${nightBadge(l)}
-        <span class="grow"></span>${statusBadge(l)}</div>
-      <div class="lc-loc"><b>${esc(locText(l))}</b><span class="mono muted">${esc(l.address)}</span>${repB(l)}</div>
-      <div class="lc-desc">${esc(l.desc)}</div>
-      <div class="lc-foot"><span><i class="fa-solid fa-tag"></i> ${esc(l.cause)}</span>${l.detectorType?`<span>${esc(l.detectorType)}</span>`:''}<span><i class="fa-solid fa-user"></i> ${esc(l.assignee||'미지정')}</span></div>
-      ${interlockText(l)}
-      ${l.deleted?'<div style="margin-top:8px"><button class="btn sm ok" data-act="restore"><i class="fa-solid fa-rotate-left"></i> 복원</button></div>':''}
-    </div>`).join('');
-  $('list-table').innerHTML = L.map(l=>`
-    <tr class="row${l.deleted?' del':''}" data-id="${esc(l.id)}">
-      <td class="nw"><b>${esc(shortDate(l.date))}</b><br><span class="muted">${esc(l.time||'시각 미기록')}</span> ${nightBadge(l)}</td>
-      <td class="nw"><span class="b ${TYPE_CLS[l.type]}">${esc(l.type)}</span></td>
-      <td class="nw"><b>${esc(locText(l))}</b></td>
-      <td class="nw mono">${esc(l.address)}<br>${repB(l)}</td>
-      <td>${esc(l.detectorType)}</td>
-      <td class="desc-cell">${esc(l.desc)}${l.note?`<div class="il">비고: ${esc(l.note)}</div>`:''}${interlockText(l)}</td>
-      <td class="nw">${esc(l.cause)}</td>
-      <td class="nw">${esc(l.assignee||'미지정')}</td>
-      <td>${statusBadge(l)}</td>
-      <td class="nw no-print">${l.deleted?'<button class="btn sm ok" data-act="restore">복원</button>':'<button class="btn sm" data-act="edit"><i class="fa-solid fa-pen"></i> 수정</button>'}</td>
-    </tr>`).join('');
-}
+        function loadDashboardsFromStorage() {
+            try {
+                const saved = localStorage.getItem('fire_dashboards_v2');
+                if (saved) {
+                    dashboards = JSON.parse(saved);
+                    dashboards.sort((a, b) => {
+                        const timeA = parseInt(a.id.replace('dash-', '')) || 0;
+                        const timeB = parseInt(b.id.replace('dash-', '')) || 0;
+                        return timeB - timeA;
+                    });
+                    
+                    if (isFirstLoad || !dashboards.find(d => d.id === activeDashId)) {
+                        activeDashId = dashboards[0].id;
+                        isFirstLoad = false;
+                    }
+                } else {
+                    dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
+                }
+            } catch(e) {  
+                console.error(e);
+                dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
+            }
+            saveDashboardsToStorage();
+        }
 
-/* ---- 차단 현황 ---- */
-function renderBlocked(){
-  const all=active();
-  const open=all.filter(isOpenBlock).sort((a,b)=>blockDays(b)-blockDays(a));
-  const restored=all.filter(l=>l.status==='복구완료' && l.blockStart && l.blockEnd);
-  const avg=restored.length ? (restored.reduce((s,l)=>s+blockDays(l),0)/restored.length).toFixed(1) : '-';
-  document.querySelectorAll('[data-badge]').forEach(b=>{ b.textContent=open.length; b.classList.toggle('hidden', !open.length); });
-  $('bk-sum').innerHTML = `
-    <div><b style="color:#b91c1c">${open.length}</b><span>미복구</span></div>
-    <div><b style="color:#d97706">${open.filter(l=>blockDays(l)>=7).length}</b><span>7일 이상</span></div>
-    <div><b>${avg}${avg==='-'?'':'일'}</b><span>평균 복구 소요</span></div>`;
-  $('bk-list').innerHTML = open.length ? open.map(l=>{
-    const d=blockDays(l);
-    return `<div class="bk" data-id="${esc(l.id)}">
-      <div class="days ${d>=14?'crit':d>=7?'warn':''}"><b>${d}</b><span>일 경과</span></div>
-      <div class="bk-body">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="b ${l.status==='입력차단'?'b-block':'b-remove'}">${esc(l.status)}</span><span class="b ${TYPE_CLS[l.type]}">${esc(l.type)}</span><b>${esc(locText(l))}</b><span class="mono muted">${esc(l.address)}</span></div>
-        <div style="margin-top:4px;font-size:13px;word-break:keep-all">${esc(l.desc)}</div>
-        <div class="muted small" style="margin-top:3px">차단 시작 ${esc(fmtDT(l.blockStart||l.date))} · ${esc(l.assignee||'담당 미지정')}${l.note?' · '+esc(l.note):''}</div>
-        <div class="bk-act"><button class="btn sm ok" data-act="quick-restore"><i class="fa-solid fa-circle-check"></i> 복구 처리</button><button class="btn sm" data-act="edit"><i class="fa-solid fa-pen"></i> 수정</button></div>
-      </div></div>`;
-  }).join('') : '<div class="card empty" style="grid-column:1/-1"><i class="fa-solid fa-circle-check" style="color:#10b981;font-size:22px"></i><br>현재 차단·탈거 중인 설비가 없습니다.</div>';
-}
+        function saveDashboardsToStorage() {
+            try {
+                localStorage.setItem('fire_dashboards_v2', JSON.stringify(dashboards));
+                localStorage.setItem('fire_active_dash_v2', activeDashId);
+            } catch(e) { console.error(e); }
 
-/* ---- 체크리스트 ---- */
-function renderChecklist(){
-  const cls={'양호':'s-ok','점검필요':'s-need','조치중':'s-doing'};
-  $('check-list').innerHTML = checklist.map(c=>`
-    <div class="ck">
-      <div class="ck-main"><div class="ck-area">${esc(c.area)} <span class="muted small" style="font-weight:600">· ${esc(c.cycle)}</span></div>
-        <div>${esc(c.item)}</div><div class="muted small">${esc(c.std)}</div></div>
-      <select class="ctl ck-sel ${cls[c.state]||''}" data-ck="${esc(c.id)}" aria-label="${esc(c.area)} 상태">${opts(CHECK_STATES,c.state)}</select>
-    </div>`).join('');
-  $('ck-updated').textContent = checklistMeta;
-}
+            if (useFirebase && db) {
+                const cur = getActiveDashboard();
+                if (cur) {
+                    db.collection("fire_dashboards").doc(cur.id).set(cur)
+                    .then(() => console.log("Firebase 문서 저장 성공:", cur.id))
+                    .catch(err => console.error("Firebase 저장 실패:", err));
+                }
+            }
+        }
 
-/* ------------------------- 탭 ------------------------- */
-function switchTab(t){
-  currentTab=t;
-  document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('hidden', s.id!=='tab-'+t));
-  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
-  $('periodbar').classList.toggle('hidden', !(t==='dashboard'||t==='list'));
-  window.scrollTo(0,0);
-  if(t==='dashboard') requestAnimationFrame(()=>Object.values(charts).forEach(c=>c&&c.resize()));
-}
+        function getActiveDashboard() {
+            return dashboards.find(d => d.id === activeDashId) || dashboards[0];
+        }
 
-/* ------------------------- 입력 폼 ------------------------- */
-function buildChips(){
-  const mk=(grp)=>EQUIP.map((e,i)=>`<label class="chip"><input type="checkbox" name="${grp}" value="${esc(e)}" data-i="${i}"><span>${esc(e)}</span></label>`).join('');
-  $('chips-out').innerHTML=mk('out'); $('chips-sup').innerHTML=mk('sup');
-  // 같은 설비는 '출력'과 '연동정지 차단' 중 하나만 선택
-  ['chips-out','chips-sup'].forEach((id,k)=>{
-    $(id).addEventListener('change',e=>{
-      if(!e.target.checked) return;
-      const other=$(k?'chips-out':'chips-sup').querySelector(`input[data-i="${e.target.dataset.i}"]`);
-      if(other) other.checked=false;
-    });
-  });
-}
-function getChecked(name){ return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i=>i.value); }
-function setChecked(name,vals){ document.querySelectorAll(`input[name="${name}"]`).forEach(i=>i.checked=vals.includes(i.value)); }
+        function loadActiveDashboard() {
+            const cur = getActiveDashboard();
+            if (!cur) return;
+            activeDashId = cur.id;
+            detectorLogs = cur.logs || [];
 
-function syncBlockFields(auto){
-  const s=$('f-status').value;
-  const showStart = BLOCKED.includes(s) || s==='복구완료';
-  const showEnd = s==='복구완료';
-  $('grp-block').classList.toggle('hidden', !showStart);
-  $('grp-end1').classList.toggle('hidden', !showEnd);
-  $('grp-end2').classList.toggle('hidden', !showEnd);
-  if(auto){
-    if(BLOCKED.includes(s) && !$('f-bstart').value){
-      $('f-bstart').value = ($('f-date').value || ymd(new Date())) + 'T' + ($('f-time').value || hm(new Date()));
-    }
-    if(showEnd && !$('f-bend').value) $('f-bend').value = nowLocal();
-    if(showEnd && !$('f-rby').value) $('f-rby').value = user;
-  }
-}
-function updateAddrHint(){
-  const a=$('f-addr').value.trim(), id=$('f-id').value, h=$('addr-hint');
-  if(!a){ h.classList.add('hidden'); return; }
-  const past=active().filter(l=>l.address.trim()===a && l.id!==id);
-  if(!past.length){ h.classList.add('hidden'); return; }
-  const last=past.sort((x,y)=>sortKey(y).localeCompare(sortKey(x)))[0];
-  h.textContent = `⚠ 이 Address 과거 ${past.length}회 발생 (최근 ${shortDate(last.date)} ${last.type})`;
-  h.classList.remove('hidden');
-}
-function openForm(id){
-  const l = id ? logs.find(x=>x.id===id) : null;
-  $('log-form').reset();
-  $('f-id').value = l ? l.id : '';
-  $('form-title').textContent = l ? '이력 수정' : '이력 등록';
-  $('f-del').classList.toggle('hidden', !l || l.deleted);
-  const d=new Date();
-  $('f-date').value = l ? l.date : ymd(d);
-  $('f-time').value = l ? l.time : hm(d);
-  $('f-type').value = l ? l.type : '비화재보';
-  $('f-det').value = l && l.detectorType ? l.detectorType : DETECTORS[0];
-  $('f-bld').value = l ? l.building : '';
-  $('f-floor').value = l ? l.floor : '';
-  if(l && l.floor && !FLOORS.includes(l.floor)){ $('f-floor').insertAdjacentHTML('beforeend',`<option value="${esc(l.floor)}">${esc(l.floor)}</option>`); $('f-floor').value=l.floor; }
-  $('f-addr').value = l ? l.address : '';
-  $('f-cause').value = l ? l.cause : '원인불명';
-  $('f-desc').value = l ? l.desc : '';
-  $('f-status').value = l ? l.status : '점검중';
-  $('f-assignee').value = l ? l.assignee : user;
-  $('f-bstart').value = l ? l.blockStart : '';
-  $('f-bend').value = l ? l.blockEnd : '';
-  $('f-rby').value = l ? l.restoredBy : '';
-  $('f-note').value = l ? l.note : '';
-  setChecked('out', l ? l.outputs : []);
-  setChecked('sup', l ? l.suppressed : []);
-  $('f-meta').textContent = l ? `등록: ${l.createdBy||'-'} ${l.createdAt?fmtDT(l.createdAt.slice(0,16)):''}  ·  최종 수정: ${l.updatedBy||'-'} ${l.updatedAt?fmtDT(l.updatedAt.slice(0,16)):''}` : '';
-  syncBlockFields(false);
-  updateAddrHint();
-  $('form-modal').classList.remove('hidden');
-  document.body.style.overflow='hidden';
-}
-function closeForm(){ $('form-modal').classList.add('hidden'); document.body.style.overflow=''; }
+            document.getElementById('header-dash-title').innerText = cur.title;
+            document.getElementById('header-dash-period').innerText = cur.period;
+            document.getElementById('header-dash-desc').innerText = cur.desc;
 
-function submitForm(e){
-  e.preventDefault();
-  const id=$('f-id').value;
-  const prev = id ? logs.find(l=>l.id===id) : null;
-  const s=$('f-status').value;
-  if(BLOCKED.includes(s) && !$('f-bstart').value) syncBlockFields(true);
-  const bStart = (BLOCKED.includes(s)||s==='복구완료') ? $('f-bstart').value : '';
-  const bEnd = s==='복구완료' ? $('f-bend').value : '';
-  if(bStart && bEnd && bEnd < bStart){ alert('복구 일시가 차단 시작 일시보다 빠릅니다. 확인해 주세요.'); return; }
-  let addr=$('f-addr').value.trim();
-  if(/^\d{8}$/.test(addr)) addr=addr.slice(0,4)+'-'+addr.slice(4);
-  const who=whoAmI(), now=new Date().toISOString();
-  const obj=Object.assign({}, prev||{}, {
-    id: id || uid(),
-    date:$('f-date').value, time:$('f-time').value, type:$('f-type').value,
-    building:$('f-bld').value, floor:$('f-floor').value, address:addr,
-    detectorType:$('f-det').value, desc:$('f-desc').value.trim(), cause:$('f-cause').value,
-    assignee:$('f-assignee').value.trim(), status:s,
-    blockStart:bStart, blockEnd:bEnd, restoredBy: s==='복구완료' ? $('f-rby').value.trim() : '',
-    outputs:getChecked('out'), suppressed:getChecked('sup'), note:$('f-note').value.trim(),
-    updatedBy:who, updatedAt:now
-  });
-  if(!prev){ obj.createdBy=who; obj.createdAt=now; }
-  saveLog(obj);
-  closeForm();
-  toast(prev ? '수정되었습니다.' : '등록되었습니다.');
-}
-function softDelete(id){
-  const l=logs.find(x=>x.id===id); if(!l) return;
-  if(!confirm('이 이력을 삭제할까요?\n삭제 항목은 목록의 [상태: 삭제된 항목]에서 복원할 수 있습니다.')) return;
-  const who=whoAmI();
-  saveLog(Object.assign({}, l, {deleted:true, deletedBy:who, deletedAt:new Date().toISOString(), updatedBy:who, updatedAt:new Date().toISOString()}));
-  closeForm(); toast('삭제되었습니다.');
-}
-function restoreDeleted(id){
-  const l=logs.find(x=>x.id===id); if(!l) return;
-  const who=whoAmI();
-  saveLog(Object.assign({}, l, {deleted:false, deletedBy:'', deletedAt:'', updatedBy:who, updatedAt:new Date().toISOString()}));
-  toast('복원되었습니다.');
-}
-function quickRestore(id){
-  const l=logs.find(x=>x.id===id); if(!l) return;
-  if(!confirm(`${locText(l)} ${l.address}\n\n복구(차단해제) 처리할까요?\n복구 일시는 지금 시각으로 기록됩니다.`)) return;
-  const who=whoAmI();
-  saveLog(Object.assign({}, l, {status:'복구완료', blockStart:l.blockStart||(l.date+'T'+(l.time||'00:00')), blockEnd:nowLocal(), restoredBy:who, updatedBy:who, updatedAt:new Date().toISOString()}));
-  toast('복구 처리되었습니다.');
-}
+            const selector = document.getElementById('dash-selector');
+            if (selector) selector.value = cur.id;
 
-/* ------------------------- 기존 데이터 이관 ------------------------- */
-function convertLegacyDash(dash){
-  const yr=(String(dash.period||'').match(/(20\d{2})/)||[])[1] || String(new Date().getFullYear());
-  const now=new Date().toISOString();
-  return (dash.logs||[]).map(o=>{
-    const md=String(o.date||'').split('/');
-    const date=(md.length===2 && +md[0] && +md[1]) ? `${yr}-${pad(+md[0])}-${pad(+md[1])}` : ymd(new Date());
-    const lp=String(o.location||'').split('/');
-    const b0=String(lp[0]||'').trim().toUpperCase();
-    const building = BUILDINGS.includes(o.building) ? o.building : (BUILDINGS.includes(b0) ? b0 : '');
-    const floor = String(lp[1]||'').trim().toUpperCase();
-    const st=String(o.status||''), desc=String(o.desc||'');
-    let status='점검중', bs='', note='';
-    if(BLOCKED.includes(st)){ status=st; bs=date+'T00:00'; }
-    else if(st==='점검완료'){ status = /차단해제|재부착|탈거/.test(desc) ? '복구완료' : '조치완료(차단없음)'; }
-    else if(st){ note='기존 상태: '+st; }
-    return normalize({
-      id:'legacy-'+o.id, legacyId:String(o.id), date, time:'', type:o.type, building, floor,
-      address:o.address, detectorType:o.detectorType, desc, cause:o.cause, assignee:o.assignee,
-      status, blockStart:bs, note:[note, `[이관] ${dash.title||'기존 대시보드'} · 발생시각 미기록`].filter(Boolean).join(' / '),
-      createdBy:'이관', createdAt:now, updatedBy:'이관', updatedAt:now
-    });
-  });
-}
-async function importLegacy(){
-  closeMenu();
-  let dashes=[], src='저장된 기존 대시보드';
-  if(mode==='firebase'){
-    try{ const s=await db.collection(COL_LEGACY).get(); s.forEach(d=>dashes.push(d.data())); }catch(e){ console.warn(e); }
-  }
-  if(!dashes.length){ const l=lsGetJSON(LS.legacy); if(Array.isArray(l)) dashes=l; }
-  if(!dashes.filter(d=>d.logs&&d.logs.length).length){ dashes=[LEGACY_SEED]; src='내장된 7월 기본 데이터'; }
-  const map=new Map(); dashes.flatMap(convertLegacyDash).forEach(c=>map.set(c.id,c));
-  const arr=[...map.values()];
-  if(!arr.length){ toast('가져올 데이터가 없습니다.'); return; }
-  if(!confirm(`${src}에서 ${arr.length}건을 가져옵니다.\n같은 항목은 중복 등록되지 않습니다. 계속할까요?`)) return;
-  saveMany(arr);
-  toast(`${arr.length}건을 가져왔습니다. 발생시각은 수정창에서 보완해 주세요.`);
-}
+            populateMonthFilterOptions();
+            renderTable();
+            updateKPIs();
+            updateCharts();
+        }
 
-/* ------------------------- 내보내기 ------------------------- */
-function download(content,name,type){
-  const blob=new Blob([content],{type});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download=name;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
-}
-function fileStamp(){ return ymd(new Date()).replace(/-/g,''); }
-function exportRows(){ return listLogs(); }
-const EXPORT_HEAD=['일자','시각','주야','구분','동','층','Address','장치종류','상세내역','원인','실제출력설비','연동정지차단설비','담당자','상태','차단/탈거일시','복구일시','차단일수','복구조치자','비고','등록자','최종수정자'];
-function exportRow(l){
-  const hasBlock = l.blockStart && (l.blockEnd || isOpenBlock(l));
-  return [l.date,l.time,l.time?(isNight(l.time)?'야간':'주간'):'',l.type,l.building?l.building+'동':'',l.floor,l.address,l.detectorType,l.desc,l.cause,
-    l.outputs.join(', '),l.suppressed.join(', '),l.assignee,l.status,l.blockStart.replace('T',' '),l.blockEnd.replace('T',' '),
-    hasBlock?blockDays(l):'',l.restoredBy,l.note,l.createdBy,l.updatedBy];
-}
-function exportCSV(){
-  closeMenu();
-  const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
-  const rows=[EXPORT_HEAD].concat(exportRows().map(exportRow));
-  download('\uFEFF'+rows.map(r=>r.map(cell).join(',')).join('\r\n'), `원그로브_소방이력_${fileStamp()}.csv`, 'text/csv;charset=utf-8');
-  toast('CSV 파일을 저장했습니다. (현재 기간·필터 기준)');
-}
-function exportDOC(){
-  closeMenu();
-  const R=exportRows();
-  const head=['일자','시각','구분','동/층','Address','상세내역','원인','연동 영향','상태','차단일수','담당자'];
-  let h=`<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset="utf-8"><title>원그로브 소방이력</title>
-  <style>body{font-family:'Malgun Gothic';font-size:10pt}h1{font-size:16pt;border-bottom:2px solid #2563eb}table{border-collapse:collapse;width:100%}th,td{border:1px solid #94a3b8;padding:4px;font-size:9pt}th{background:#f1f5f9}</style></head><body>
-  <h1>원그로브 비화재보·고장·감시 이력 보고</h1>
-  <p>조회 기간: ${esc(periodLabel())} · 총 ${R.length}건 (비화재보 ${R.filter(l=>l.type==='비화재보').length} / 고장 ${R.filter(l=>l.type==='고장').length} / 감시 ${R.filter(l=>l.type==='감시').length}) · 현재 미복구 ${active().filter(isOpenBlock).length}건<br>작성: 종합방재실/소방파트 · 출력: ${esc(new Date().toLocaleString('ko-KR'))}</p>
-  <table><tr>${head.map(x=>`<th>${x}</th>`).join('')}</tr>`;
-  R.forEach(l=>{
-    const il=[l.outputs.length?'출력: '+l.outputs.join(', '):'', l.suppressed.length?'차단: '+l.suppressed.join(', '):''].filter(Boolean).join(' / ');
-    const days = l.blockStart && (l.blockEnd||isOpenBlock(l)) ? blockDays(l)+'일' : '';
-    h+=`<tr><td>${esc(l.date)}</td><td>${esc(l.time)}</td><td><b>${esc(l.type)}</b></td><td>${esc(locText(l))}</td><td>${esc(l.address)}</td><td>${esc(l.desc)}${l.note?'<br>비고: '+esc(l.note):''}</td><td>${esc(l.cause)}</td><td>${esc(il)}</td><td>${esc(l.status)}</td><td>${days}</td><td>${esc(l.assignee)}</td></tr>`;
-  });
-  h+='</table></body></html>';
-  download(h, `원그로브_소방이력_${fileStamp()}.doc`, 'application/msword;charset=utf-8');
-  toast('DOC 파일을 저장했습니다. (현재 기간·필터 기준)');
-}
-function exportJSON(){
-  closeMenu();
-  download(JSON.stringify({app:'wongrove-fire-log',version:3,exportedAt:new Date().toISOString(),logs,checklist},null,2),
-    `원그로브_소방이력_백업_${fileStamp()}.json`, 'application/json');
-  toast('전체 백업 파일을 저장했습니다. (삭제 항목 포함)');
-}
-function importJSONFile(file){
-  const r=new FileReader();
-  r.onload=()=>{
-    let obj; try{ obj=JSON.parse(r.result); }catch(e){ alert('JSON 형식이 올바르지 않습니다.'); return; }
-    let arr=[];
-    if(obj && obj.version===3 && Array.isArray(obj.logs)) arr=obj.logs.map(normalize);
-    else if(Array.isArray(obj)) arr=obj.flatMap(d=>d&&d.logs?convertLegacyDash(d):[]);
-    else if(obj && Array.isArray(obj.logs)) arr=convertLegacyDash(obj);
-    if(!arr.length){ alert('가져올 이력을 찾지 못했습니다.'); return; }
-    if(!confirm(`${arr.length}건을 가져옵니다.\n같은 ID의 기존 항목은 백업 내용으로 덮어씁니다. 계속할까요?`)) return;
-    saveMany(arr);
-    if(obj.version===3 && Array.isArray(obj.checklist)){ checklist=obj.checklist; saveChecklist(); }
-    toast(`${arr.length}건을 가져왔습니다.`);
-  };
-  r.readAsText(file,'utf-8');
-}
-function doPrint(){
-  closeMenu();
-  $('pr-period').textContent = periodLabel();
-  $('pr-date').textContent = new Date().toLocaleDateString('ko-KR');
-  document.title = `원그로브_소방이력_보고서_${fileStamp()}`;
-  document.body.classList.add('printing');
-  Object.values(charts).forEach(c=>c&&c.resize());
-  setTimeout(()=>window.print(), 400);
-}
-window.addEventListener('afterprint',()=>{
-  document.body.classList.remove('printing');
-  document.title=ORIGINAL_TITLE;
-  switchTab(currentTab);
-});
+        function saveCurrentDashboardState() {
+            const cur = getActiveDashboard();
+            if (cur) {
+                cur.logs = detectorLogs;
+                cur.updatedAt = new Date().toLocaleString();
+                saveDashboardsToStorage();
+            }
+        }
 
-/* ------------------------- 메뉴 ------------------------- */
-function closeMenu(){ $('menu').classList.add('hidden'); }
-function handleMenu(k){
-  if(k==='csv') exportCSV();
-  else if(k==='doc') exportDOC();
-  else if(k==='print') doPrint();
-  else if(k==='backup') exportJSON();
-  else if(k==='import'){ closeMenu(); $('import-file').click(); }
-  else if(k==='legacy') importLegacy();
-  else if(k==='user'){
-    closeMenu();
-    const n=prompt('작업자 이름', user);
-    if(n!==null){ user=n.trim(); lsSet(LS.user,user); setSync(); toast('작업자 이름이 저장되었습니다.'); }
-  }
-}
+        function renderDashboardList() {
+            const selectEl = document.getElementById('dash-selector');
+            if (!selectEl) return;
+            
+            dashboards.sort((a, b) => {
+                const timeA = parseInt(a.id.replace('dash-', '')) || 0;
+                const timeB = parseInt(b.id.replace('dash-', '')) || 0;
+                return timeB - timeA;
+            });
 
-/* ------------------------- 초기화 ------------------------- */
-function buildStaticUI(){
-  $('f-type').innerHTML=opts(TYPES);
-  $('f-det').innerHTML=opts(DETECTORS);
-  $('f-bld').insertAdjacentHTML('beforeend', BUILDINGS.map(b=>`<option value="${b}">${b}동</option>`).join(''));
-  $('f-floor').insertAdjacentHTML('beforeend', opts(FLOORS));
-  $('f-cause').innerHTML=opts(CAUSES);
-  $('f-status').innerHTML=opts(STATUSES);
-  $('fl-building').insertAdjacentHTML('beforeend', BUILDINGS.map(b=>`<option value="${b}">${b}동</option>`).join(''));
-  $('fl-type').insertAdjacentHTML('beforeend', opts(TYPES));
-  $('fl-cause').insertAdjacentHTML('beforeend', opts(CAUSES));
-  buildChips();
-  $('p-key').value = period.key;
-  $('p-from').value = period.from||''; $('p-to').value = period.to||'';
-  $('p-from').classList.toggle('hidden', period.key!=='custom');
-  $('p-to').classList.toggle('hidden', period.key!=='custom');
-}
-function bindEvents(){
-  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
-  document.querySelectorAll('[data-action="add"]').forEach(b=>b.addEventListener('click',()=>openForm(null)));
-  $('menu-btn').addEventListener('click',e=>{ e.stopPropagation(); $('menu').classList.toggle('hidden'); });
-  document.addEventListener('click',e=>{
-    if(!e.target.closest('.menu-wrap')) closeMenu();
-    const m=e.target.closest('[data-menu]'); if(m) handleMenu(m.dataset.menu);
-  });
-  $('import-file').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) importJSONFile(f); e.target.value=''; });
+            selectEl.innerHTML = dashboards.map(d => 
+                `<option value="${d.id}">${d.title} (${d.logs ? d.logs.length : 0}건)</option>`
+            ).join('');
+        }
 
-  // 기간
-  const savePeriod=()=>{ lsSet(LS.period, JSON.stringify(period)); renderAll(); };
-  $('p-key').addEventListener('change',e=>{
-    period.key=e.target.value;
-    const c=period.key==='custom';
-    $('p-from').classList.toggle('hidden',!c); $('p-to').classList.toggle('hidden',!c);
-    savePeriod();
-  });
-  $('p-from').addEventListener('change',e=>{ period.from=e.target.value; savePeriod(); });
-  $('p-to').addEventListener('change',e=>{ period.to=e.target.value; savePeriod(); });
+        function switchDashboard(dashId) {
+            saveCurrentDashboardState();
+            activeDashId = dashId;
+            selectedMonthFilter = "ALL";
+            saveDashboardsToStorage();
+            loadActiveDashboard();
+            showToast("관제 대시보드가 전환되었습니다.");
+        }
 
-  // KPI → 탭 이동, 반복 Address → 목록 검색
-  $('kpis').addEventListener('click',e=>{ const k=e.target.closest('[data-go]'); if(k) switchTab(k.dataset.go); });
-  $('repeat-list').addEventListener('click',e=>{
-    const r=e.target.closest('[data-addr]'); if(!r) return;
-    filters.q=r.dataset.addr; $('fl-q').value=filters.q; renderList(); switchTab('list');
-  });
+        // Helper to extract month string ("7", "9", etc.) from item.date
+        function getItemMonth(item) {
+            if (!item || !item.date) return "";
+            const parts = item.date.split('/');
+            return parts.length >= 1 ? parts[0].trim() : "";
+        }
 
-  // 목록 필터
-  let qt; $('fl-q').addEventListener('input',e=>{ clearTimeout(qt); qt=setTimeout(()=>{ filters.q=e.target.value; renderList(); },150); });
-  [['fl-building','building'],['fl-type','type'],['fl-cause','cause'],['fl-state','state']].forEach(([id,k])=>$(id).addEventListener('change',e=>{ filters[k]=e.target.value; renderList(); }));
+        function populateMonthFilterOptions() {
+            const monthSelect = document.getElementById('filter-month');
+            if (!monthSelect) return;
 
-  // 목록/차단현황 클릭
-  const onItem=e=>{
-    const el=e.target.closest('[data-id]'); if(!el) return;
-    const id=el.dataset.id, act=(e.target.closest('[data-act]')||{}).dataset?.act;
-    if(act==='restore') restoreDeleted(id);
-    else if(act==='quick-restore') quickRestore(id);
-    else { const l=logs.find(x=>x.id===id); if(l && l.deleted) restoreDeleted(id); else openForm(id); }
-  };
-  $('list-cards').addEventListener('click',onItem);
-  $('list-table').addEventListener('click',onItem);
-  $('bk-list').addEventListener('click',onItem);
+            const monthSet = new Set();
+            detectorLogs.forEach(item => {
+                const m = getItemMonth(item);
+                if (m && !isNaN(parseInt(m, 10))) {
+                    monthSet.add(parseInt(m, 10));
+                }
+            });
 
-  // 체크리스트
-  $('check-list').addEventListener('change',e=>{
-    const s=e.target.closest('[data-ck]'); if(!s) return;
-    const c=checklist.find(x=>x.id===s.dataset.ck); if(c){ c.state=s.value; saveChecklist(); toast('체크리스트 상태가 저장되었습니다.'); }
-  });
+            const sortedMonths = Array.from(monthSet).sort((a, b) => a - b);
+            
+            let html = `<option value="ALL">전체 기간 누적</option>`;
+            sortedMonths.forEach(m => {
+                const count = detectorLogs.filter(l => getItemMonth(l) == m).length;
+                html += `<option value="${m}" ${selectedMonthFilter == m ? 'selected' : ''}>2026년 ${m}월 (${count}건)</option>`;
+            });
 
-  // 폼
-  $('log-form').addEventListener('submit',submitForm);
-  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',closeForm));
-  $('form-modal').addEventListener('click',e=>{ if(e.target===$('form-modal')) closeForm(); });
-  $('f-status').addEventListener('change',()=>syncBlockFields(true));
-  $('f-addr').addEventListener('input',updateAddrHint);
-  $('f-addr').addEventListener('blur',()=>{ const v=$('f-addr').value.trim(); if(/^\d{8}$/.test(v)){ $('f-addr').value=v.slice(0,4)+'-'+v.slice(4); updateAddrHint(); } });
-  $('f-del').addEventListener('click',()=>softDelete($('f-id').value));
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeForm(); closeMenu(); } });
+            monthSelect.innerHTML = html;
+        }
 
-  window.addEventListener('online',setSync);
-  window.addEventListener('offline',setSync);
-  let rt; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(charts.cause){ charts.cause.options.plugins.legend.position = window.innerWidth<480?'bottom':'right'; charts.cause.update(); } },200); });
-}
+        function handleMonthChange() {
+            selectedMonthFilter = document.getElementById('filter-month').value;
+            const badge = document.getElementById('month-summary-badge');
+            if (badge) {
+                if (selectedMonthFilter === 'ALL') {
+                    badge.innerText = `전체 데이터 (${detectorLogs.length}건)`;
+                } else {
+                    const count = detectorLogs.filter(l => getItemMonth(l) == selectedMonthFilter).length;
+                    badge.innerText = `2026년 ${selectedMonthFilter}월 집계 (${count}건)`;
+                }
+            }
+            renderTable();
+            updateKPIs();
+            updateCharts();
+        }
 
-buildStaticUI();
-bindEvents();
-switchTab('dashboard');
-initData();
-</script>
+        // Returns logs filtered by currently selected month (used for KPI and charts)
+        function getScopedLogs() {
+            if (selectedMonthFilter === "ALL") {
+                return detectorLogs;
+            }
+            return detectorLogs.filter(item => getItemMonth(item) == selectedMonthFilter);
+        }
+
+        function openPdfModal() {
+            saveCurrentDashboardState();
+            const cur = getActiveDashboard();
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            
+            // Auto generate month specific filename
+            let defaultFilename = "";
+            if (selectedMonthFilter !== "ALL") {
+                const mStr = String(selectedMonthFilter).padStart(2, '0');
+                defaultFilename = `2026년_${mStr}월_소방시설_고장감시_월간보고서_${dateStr}`;
+            } else {
+                defaultFilename = `${cur.title.replace(/\s+/g, '_')}_보고서_${dateStr}`;
+            }
+            
+            const pdfInput = document.getElementById('pdf-filename-input');
+            if (pdfInput) {
+                pdfInput.value = defaultFilename;
+            }
+            
+            document.getElementById('pdf-modal').classList.remove('hidden');
+        }
+
+        function closePdfModal() {
+            document.getElementById('pdf-modal').classList.add('hidden');
+        }
+
+        function setPdfPresetName(type) {
+            const cur = getActiveDashboard();
+            const pdfInput = document.getElementById('pdf-filename-input');
+            const today = new Date().toISOString().slice(0, 10);
+            const mStr = selectedMonthFilter !== "ALL" ? `${String(selectedMonthFilter).padStart(2, '0')}월_` : '';
+
+            if (type === 1) {
+                pdfInput.value = `2026년_${mStr}소방시설_고장감시_월간공식보고서`;
+            } else if (type === 2) {
+                pdfInput.value = `${today}_원그로브_${mStr}종합방재_월간보고서`;
+            } else if (type === 3) {
+                pdfInput.value = `[소방파트]_2026년_${mStr}소방시설_고장및감시_이력관리대장`;
+            }
+        }
+
+        function executePdfPrint() {
+            const pdfInput = document.getElementById('pdf-filename-input');
+            let customName = pdfInput ? pdfInput.value.trim() : '';
+
+            if (!customName) {
+                customName = '소방시설_고장감시_월간보고서';
+            }
+
+            closePdfModal();
+
+            const cur = getActiveDashboard();
+            const printTitleEl = document.getElementById('print-doc-title');
+            const printDocIdEl = document.getElementById('print-doc-id');
+            const printSubEl = document.getElementById('print-doc-subtitle');
+            const printDeptEl = document.getElementById('print-doc-dept');
+            const printDateEl = document.getElementById('print-doc-date');
+            
+            // Format monthly specific document headers for official approval
+            if (selectedMonthFilter !== "ALL") {
+                const mStr = String(selectedMonthFilter).padStart(2, '0');
+                if (printDocIdEl) printDocIdEl.innerText = `문서번호: FIR-2026-${mStr}`;
+                if (printTitleEl) printTitleEl.innerText = `2026년 ${selectedMonthFilter}월 종합방재실 소방시설 고장/감시 월간보고서`;
+                if (printSubEl) printSubEl.innerText = `관제 대상기간: 2026.${mStr}.01 ~ 2026.${mStr}.31 | 대상 구역: ${cur.target || 'A/B/C/D동 전 구역'}`;
+            } else {
+                if (printDocIdEl) printDocIdEl.innerText = `문서번호: FIR-2026-ALL`;
+                if (printTitleEl) printTitleEl.innerText = cur.title;
+                if (printSubEl) printSubEl.innerText = `관제 기간: ${cur.period} | 대상 구역: ${cur.target || 'A/B/C/D동 전 구역'} | ${cur.desc || ''}`;
+            }
+            
+            if (printDeptEl) printDeptEl.innerText = cur.dept || '종합방재실/소방파트';
+            if (printDateEl) printDateEl.innerText = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+            const originalTitle = document.title;
+            document.title = customName;
+
+            showToast(`PDF 파일명 '${customName}.pdf' 설정으로 인쇄/저장창을 엽니다.`);
+
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.title = originalTitle;
+                }, 1000);
+            }, 300);
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            if (!tbody) return;
+
+            const searchInput = document.getElementById('search-input');
+            const search = searchInput ? searchInput.value.toLowerCase() : '';
+            const filterBuilding = document.getElementById('filter-building').value;
+            const filterType = document.getElementById('filter-type').value;
+
+            const parseLogDate = (item) => {
+                if (item.date) {
+                    const parts = item.date.split('/');
+                    if (parts.length === 2) {
+                        const m = parseInt(parts[0], 10);
+                        const d = parseInt(parts[1], 10);
+                        if (!isNaN(m) && !isNaN(d)) return m * 100 + d;
+                    }
+                }
+                return typeof item.id === 'number' ? item.id : 0;
+            };
+
+            const sortedLogs = [...detectorLogs].sort((a, b) => {
+                const scoreA = parseLogDate(a);
+                const scoreB = parseLogDate(b);
+                if (scoreA !== scoreB) return scoreB - scoreA;
+                return (b.id || 0) - (a.id || 0);
+            });
+
+            const filtered = sortedLogs.filter(item => {
+                const matchMonth = (selectedMonthFilter === "ALL") || (getItemMonth(item) == selectedMonthFilter);
+                const matchSearch = (item.desc || '').toLowerCase().includes(search) || 
+                                    (item.location || '').toLowerCase().includes(search) || 
+                                    (item.address || '').toLowerCase().includes(search) ||
+                                    (item.assignee && item.assignee.toLowerCase().includes(search)) ||
+                                    (item.status || '').toLowerCase().includes(search);
+                const matchBuilding = (filterBuilding === 'ALL') || (item.building === filterBuilding) || (item.location && item.location.includes(filterBuilding));
+                const matchType = (filterType === 'ALL') || (item.type === filterType);
+                return matchMonth && matchSearch && matchBuilding && matchType;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400">선택된 조건에 해당하는 관제 내역이 없습니다.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => {
+                let typeBadge = item.type === '비화재보' 
+                    ? `<span class="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700 border border-amber-300 whitespace-nowrap">비화재보</span>`
+                    : item.type === '감시'
+                    ? `<span class="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-300 whitespace-nowrap">감시</span>`
+                    : `<span class="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-300 whitespace-nowrap">고장</span>`;
+
+                let causeBadge = '';
+                if(item.cause === '누수/침수') causeBadge = `<span class="text-rose-600 font-medium whitespace-nowrap"><i class="fa-solid fa-droplet mr-1"></i>누수/침수</span>`;
+                else if(item.cause === '결로현상') causeBadge = `<span class="text-amber-600 font-medium whitespace-nowrap"><i class="fa-solid fa-temperature-low mr-1"></i>결로</span>`;
+                else if(item.cause === '외부노출/방풍실') causeBadge = `<span class="text-sky-600 font-medium whitespace-nowrap"><i class="fa-solid fa-wind mr-1"></i>외부/방풍실</span>`;
+                else if(item.cause === '감지기고장') causeBadge = `<span class="text-purple-600 font-medium whitespace-nowrap"><i class="fa-solid fa-triangle-exclamation mr-1"></i>감지기고장</span>`;
+                else if(item.cause === '오동작') causeBadge = `<span class="text-purple-600 font-medium whitespace-nowrap"><i class="fa-solid fa-triangle-exclamation mr-1"></i>오동작</span>`;    
+                else causeBadge = `<span class="text-slate-600 font-medium whitespace-nowrap"><i class="fa-solid fa-circle-info mr-1"></i>기타</span>`;
+
+                let statusColor = 'bg-slate-100 text-slate-700';
+                if(item.status.includes('차단해제') || item.status.includes('완료')) {
+                    statusColor = 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+                } else if(item.status.includes('차단')) {
+                    statusColor = 'bg-amber-100 text-amber-800 border border-amber-300';
+                } else if(item.status.includes('탈거')) {
+                    statusColor = 'bg-rose-100 text-rose-800 border border-rose-300';
+                } else if(item.status.includes('우천영향')) {
+                    statusColor = 'bg-sky-100 text-sky-800 border border-sky-300';
+                } else if(item.status.includes('점검중')) {
+                    statusColor = 'bg-indigo-100 text-indigo-800 border border-indigo-300';
+                }
+
+                return `
+                    <tr onclick="handleRowClick(event, ${item.id})" class="hover:bg-blue-50/50 transition cursor-pointer group" title="클릭하여 내역 수정">
+                        <td class="px-3 py-3 font-semibold text-slate-800 text-center whitespace-nowrap">${item.date}</td>
+                        <td class="px-3 py-3 text-center whitespace-nowrap">${typeBadge}</td>
+                        <td class="px-3 py-3 font-bold text-slate-700 whitespace-nowrap">${item.location}</td>
+                        <td class="px-3 py-3 font-mono text-slate-600 whitespace-nowrap">${item.address}</td>
+                        <td class="px-3 py-3 text-slate-600 whitespace-nowrap">${item.detectorType || '연기감지기'}</td>
+                        <!-- Word-break and flexible min-width preventing vertical single-letter compression -->
+                        <td class="px-4 py-3 text-slate-800 font-medium leading-relaxed break-keep whitespace-normal min-w-[320px] max-w-md">
+                            <span class="group-hover:text-blue-600 transition underline-offset-2 group-hover:underline">${item.desc}</span>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap">${causeBadge}</td>
+                        <td class="px-3 py-3 text-slate-600 whitespace-nowrap">${item.assignee || '미지정'}</td>
+                        <td class="px-3 py-3 text-center whitespace-nowrap">
+                            <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold ${statusColor} group-hover:ring-1 group-hover:ring-blue-400 transition">${item.status}</span>
+                        </td>
+                        <!-- Sticky and clearly visible action buttons column -->
+                        <td class="px-3 py-3 text-center no-print whitespace-nowrap sticky right-0 bg-white group-hover:bg-slate-50 transition border-l border-slate-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button type="button" onclick="event.stopPropagation(); openEditModal(${item.id})" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white rounded-lg border border-blue-200 transition font-bold text-[11px] shadow-sm flex items-center gap-1" title="내역 수정하기">
+                                    <i class="fa-solid fa-pen-to-square"></i> 수정
+                                </button>
+                                <button type="button" onclick="event.stopPropagation(); if(confirm('정말로 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) deleteRow(${item.id});" class="px-2 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg border border-rose-200 transition font-semibold text-[11px]" title="내역 삭제">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Row click helper for instant editing
+        function handleRowClick(event, id) {
+            if (event.target.closest('button')) return;
+            openEditModal(id);
+        }
+
+        function initCharts() {
+            const ctxBuilding = document.getElementById('buildingChart').getContext('2d');
+            buildingChartInstance = new Chart(ctxBuilding, {
+                type: 'bar',
+                data: getBuildingChartData(),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            const ctxCause = document.getElementById('causeChart').getContext('2d');
+            causeChartInstance = new Chart(ctxCause, {
+                type: 'doughnut',
+                data: getCauseChartData(),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function getBuildingChartData() {
+            const currentScope = getScopedLogs();
+            const buildings = ['A', 'B', 'C', 'D'];
+            const faultCounts = buildings.map(b => currentScope.filter(l => (l.building === b || (l.location && l.location.includes(b))) && l.type === '고장').length);
+            const nonFireCounts = buildings.map(b => currentScope.filter(l => (l.building === b || (l.location && l.location.includes(b))) && l.type === '비화재보').length);
+            const watchCounts = buildings.map(b => currentScope.filter(l => (l.building === b || (l.location && l.location.includes(b))) && l.type === '감시').length);
+
+            return {
+                labels: ['A동', 'B동', 'C동', 'D동'],
+                datasets: [
+                    { label: '고장 (탈거/손상)', data: faultCounts, backgroundColor: 'rgba(239, 68, 68, 0.85)', borderRadius: 6 },
+                    { label: '비화재보', data: nonFireCounts, backgroundColor: 'rgba(245, 158, 11, 0.85)', borderRadius: 6 },
+                    { label: '감시', data: watchCounts, backgroundColor: 'rgba(59, 130, 246, 0.85)', borderRadius: 6 }
+                ]
+            };
+        }
+
+        function getCauseChartData() {
+            const currentScope = getScopedLogs();
+            const causes = ['누수/침수', '결로현상', '외부노출/방풍실', '감지기고장', '오동작', '기타'];
+            const counts = causes.map(c => currentScope.filter(l => l.cause === c).length);
+
+            return {
+                labels: causes,
+                datasets: [{
+                    data: counts,
+                    backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4', '#a855f7', '#64748b', '#94a3b8']
+                }]
+            };
+        }
+
+        function updateCharts() {
+            if (buildingChartInstance && causeChartInstance) {
+                buildingChartInstance.data = getBuildingChartData();
+                buildingChartInstance.update();
+
+                causeChartInstance.data = getCauseChartData();
+                causeChartInstance.update();
+            }
+        }
+
+        function updateKPIs() {
+            const currentScope = getScopedLogs();
+            const total = currentScope.length;
+            const nonfire = currentScope.filter(l => l.type === '비화재보').length;
+            const fault = currentScope.filter(l => l.type === '고장').length;
+
+            const ratio = total > 0 ? Math.round((nonfire / total) * 100) : 0;
+
+            const buildingMap = {};
+            currentScope.forEach(l => { 
+                const b = l.building || (l.location ? l.location.charAt(0).toUpperCase() : '');
+                if (['A','B','C','D'].includes(b)) {
+                    buildingMap[b] = (buildingMap[b] || 0) + 1; 
+                }
+            });
+            let maxBuilding = '-';
+            let maxCount = 0;
+            for (let b in buildingMap) {
+                if (buildingMap[b] > maxCount) {
+                    maxCount = buildingMap[b];
+                    maxBuilding = b;
+                }
+            }
+
+            document.getElementById('kpi-total').innerText = `${total}건`;
+            document.getElementById('kpi-nonfire').innerText = `${nonfire}건`;
+            document.getElementById('kpi-nonfire-ratio').innerText = `전체 중 ${ratio}%`;
+            document.getElementById('kpi-fault').innerText = `${fault}건`;
+            document.getElementById('kpi-hotspot').innerText = maxBuilding !== '-' ? `${maxBuilding}동 (${maxCount}건)` : '-';
+            
+            const labelEl = document.getElementById('kpi-period-label');
+            if (labelEl) {
+                labelEl.innerText = selectedMonthFilter !== "ALL" ? `2026년 ${selectedMonthFilter}월 집계` : "관제 기간 누적 기준";
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-plus-circle text-emerald-400"></i> 신규 고장/감시 내역 등록`;
+            document.getElementById('submit-btn-text').innerText = "저장하기";
+            document.getElementById('form-edit-id').value = "";
+            document.getElementById('add-form').reset();
+            
+            const now = new Date();
+            const curM = selectedMonthFilter !== "ALL" ? selectedMonthFilter : (now.getMonth() + 1);
+            document.getElementById('form-date').value = `${curM}/${now.getDate()}`;
+            
+            syncStatusInput();
+            document.getElementById('add-modal').classList.remove('hidden');
+        }
+
+        function openEditModal(id) {
+            const item = detectorLogs.find(l => l.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-blue-400"></i> 감지기 이력 정보 수정`;
+            document.getElementById('submit-btn-text').innerText = "수정 완료";
+            document.getElementById('form-edit-id').value = item.id;
+
+            document.getElementById('form-date').value = item.date;
+            document.getElementById('form-type').value = item.type;
+            document.getElementById('form-location').value = item.location;
+            document.getElementById('form-address').value = item.address;
+            document.getElementById('form-detector-type').value = item.detectorType || '방화셔터 연기감지기';
+            document.getElementById('form-assignee').value = item.assignee || '';
+            document.getElementById('form-desc').value = item.desc;
+            document.getElementById('form-cause').value = item.cause;
+
+            const selectEl = document.getElementById('form-status-select');
+            const customInput = document.getElementById('form-status');
+            
+            if (['감지기 탈거', '입력차단', '점검중', '점검완료', '창가측 우천영향'].includes(item.status)) {
+                selectEl.value = item.status;
+                customInput.classList.add('hidden');
+            } else {
+                selectEl.value = 'custom';
+                customInput.value = item.status;
+                customInput.classList.remove('hidden');
+            }
+
+            document.getElementById('add-modal').classList.remove('hidden');
+        }
+
+        function syncStatusInput() {
+            const selectVal = document.getElementById('form-status-select').value;
+            const inputEl = document.getElementById('form-status');
+            if (selectVal === 'custom') {
+                inputEl.classList.remove('hidden');
+            } else {
+                inputEl.classList.add('hidden');
+            }
+        }
+
+        function applyPreset(type) {
+            const dateStr = `${new Date().getMonth() + 1}/${new Date().getDate()}`;
+            document.getElementById('form-date').value = dateStr;
+
+            if (type === '방풍실') {
+                document.getElementById('form-type').value = "고장";
+                document.getElementById('form-location').value = "B/B1F";
+                document.getElementById('form-address').value = "0414-1037";
+                document.getElementById('form-detector-type').value = "방화셔터 연기감지기";
+                document.getElementById('form-desc').value = "방풍실내 높은 습도영향으로 오동작 및 탈거";
+                document.getElementById('form-cause').value = "외부노출/방풍실";
+                document.getElementById('form-status-select').value = "감지기 탈거";
+            } else if (type === '램프') {
+                document.getElementById('form-type').value = "고장";
+                document.getElementById('form-location').value = "C/1F";
+                document.getElementById('form-address').value = "0428-3023";
+                document.getElementById('form-detector-type').value = "아날로그 감지기";
+                document.getElementById('form-desc').value = "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거";
+                document.getElementById('form-cause').value = "누수/침수";
+                document.getElementById('form-status-select').value = "감지기 탈거";
+            } else if (type === '결로') {
+                document.getElementById('form-type').value = "고장";
+                document.getElementById('form-location').value = "D/B1F";
+                document.getElementById('form-address').value = "0436-1033";
+                document.getElementById('form-detector-type').value = "아날로그 감지기";
+                document.getElementById('form-desc').value = "D동 지하1층 매장 주방내 정온식감지기 결로현상";
+                document.getElementById('form-cause').value = "결로현상";
+                document.getElementById('form-status-select').value = "감지기 탈거";
+            } else if (type === '그레이팅') {
+                document.getElementById('form-type').value = "비화재보";
+                document.getElementById('form-location').value = "C/B1F";
+                document.getElementById('form-address').value = "0436-2070";
+                document.getElementById('form-detector-type').value = "일반 연기감지기";
+                document.getElementById('form-desc').value = "보행통로 중간 스틸 그레이팅 상단 위 감지기 우천 습기 오동작";
+                document.getElementById('form-cause').value = "외부노출/방풍실";
+                document.getElementById('form-status-select').value = "점검완료";
+            }
+            syncStatusInput();
+            showToast(`'${type}' 예시 데이터가 적용되었습니다.`);
+        }
+
+        function closeAddModal() {
+            document.getElementById('add-modal').classList.add('hidden');
+            document.getElementById('add-form').reset();
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('form-edit-id').value;
+
+            const date = document.getElementById('form-date').value;
+            const type = document.getElementById('form-type').value;
+            const location = document.getElementById('form-location').value;
+            const address = document.getElementById('form-address').value;
+            const detectorType = document.getElementById('form-detector-type').value;
+            const assignee = document.getElementById('form-assignee').value || "담당자 미지정";
+            const desc = document.getElementById('form-desc').value;
+            const cause = document.getElementById('form-cause').value;
+
+            const selectVal = document.getElementById('form-status-select').value;
+            const customVal = document.getElementById('form-status').value;
+            const status = selectVal === 'custom' ? (customVal || '등록됨') : selectVal;
+
+            let building = location.charAt(0).toUpperCase();
+            if (!['A','B','C','D'].includes(building)) {
+                if (location.includes('A동')) building = 'A';
+                else if (location.includes('B동')) building = 'B';
+                else if (location.includes('C동')) building = 'C';
+                else if (location.includes('D동')) building = 'D';
+                else building = 'C';
+            }
+
+            if (editId) {
+                const index = detectorLogs.findIndex(l => l.id == editId);
+                if (index !== -1) {
+                    detectorLogs[index] = {
+                        ...detectorLogs[index],
+                        date, type, location, building,
+                        address, detectorType, assignee, desc, cause, status
+                    };
+                    showToast("감지기 이력이 성공적으로 수정되었습니다.");
+                }
+            } else {
+                const newItem = {
+                    id: Date.now(),
+                    date, type, location, building,
+                    address, detectorType, assignee, desc, cause, status
+                };
+                detectorLogs.unshift(newItem);
+                showToast("신규 고장/감시 이력이 등록되었습니다.");
+            }
+
+            closeAddModal();
+            saveCurrentDashboardState();
+            populateMonthFilterOptions();
+            renderTable();
+            updateKPIs();
+            updateCharts();
+        }
+
+        function deleteRow(id) {
+            detectorLogs = detectorLogs.filter(l => l.id !== id);
+            saveCurrentDashboardState();
+            populateMonthFilterOptions();
+            renderTable();
+            updateKPIs();
+            updateCharts();
+            showToast("내역이 삭제되었습니다.");
+        }
+
+        function openTab(tabName) {
+            const dashTab = document.getElementById('tab-dashboard');
+            const planTab = document.getElementById('tab-plan');
+
+            if (dashTab) dashTab.classList.add('hidden');
+            if (planTab) planTab.classList.add('hidden');
+
+            document.getElementById('tab-btn-dashboard').className = "py-2.5 px-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5 transition";
+            document.getElementById('tab-btn-plan').className = "py-2.5 px-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5 transition";
+
+            if (tabName === 'dashboard') {
+                if (dashTab) dashTab.classList.remove('hidden');
+                document.getElementById('tab-btn-dashboard').className = "py-2.5 px-3 border-b-2 border-blue-500 text-blue-400 flex items-center gap-1.5 transition";
+            } else {
+                if (planTab) planTab.classList.remove('hidden');
+                document.getElementById('tab-btn-plan').className = "py-2.5 px-3 border-b-2 border-blue-500 text-blue-400 flex items-center gap-1.5 transition";
+            }
+        }
+
+        function openNewDashModal() {
+            document.getElementById('dash-form').reset();
+            document.getElementById('dash-modal').classList.remove('hidden');
+        }
+
+        function closeNewDashModal() {
+            document.getElementById('dash-modal').classList.add('hidden');
+        }
+
+        function handleNewDashSubmit(e) {
+            e.preventDefault();
+            const title = document.getElementById('dash-title').value;
+            const period = document.getElementById('dash-period').value || "2026.09.01 ~ 09.30";
+            const dept = document.getElementById('dash-dept').value || "종합방재실/소방파트";
+            const target = document.getElementById('dash-target').value || "전체 동";
+            const desc = document.getElementById('dash-desc').value || "우천 및 습기 관제";
+
+            const newDash = {
+                id: 'dash-' + Date.now(),
+                title, period, dept, target, desc,
+                updatedAt: new Date().toLocaleString(),
+                logs: []
+            };
+
+            dashboards.push(newDash);
+            saveDashboardsToStorage();
+            renderDashboardList();
+            switchDashboard(newDash.id);
+            closeNewDashModal();
+            showToast("새 대시보드가 생성되었습니다.");
+        }
+
+        function exportDataCSV() {
+            saveCurrentDashboardState();
+            const cur = getActiveDashboard();
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "일자,구분,동/층,Address,장치종류,상세내역,원인분류,담당자,상태\n";
+
+            detectorLogs.forEach(item => {
+                const row = [
+                    `"${item.date}"`, `"${item.type}"`, `"${item.location}"`, `"${item.address}"`,
+                    `"${item.detectorType || ''}"`, `"${(item.desc || '').replace(/"/g, '""')}"`,
+                    `"${item.cause}"`, `"${item.assignee || ''}"`, `"${item.status}"`
+                ].join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${cur.title.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("CSV 파일이 다운로드되었습니다.");
+        }
+
+        function exportDataTXT() {
+            saveCurrentDashboardState();
+            const cur = getActiveDashboard();
+            let txt = `=====================================================\n`;
+            txt += `         ${cur.title}\n`;
+            txt += `=====================================================\n`;
+            txt += `• 관제 기간 : ${cur.period}\n`;
+            txt += `• 작성 부서 : ${cur.dept}\n`;
+            txt += `• 대상 구역 : ${cur.target}\n`;
+            txt += `• 작성 일시 : ${new Date().toLocaleString()}\n`;
+            txt += `• 총 발생건 : ${detectorLogs.length}건 (비화재보: ${detectorLogs.filter(l=>l.type==='비화재보').length}건, 고장: ${detectorLogs.filter(l=>l.type==='고장').length}건, 감시: ${detectorLogs.filter(l=>l.type==='감시').length}건)\n\n`;
+            txt += `[ 상세 장애 내역 목록 ]\n`;
+            txt += `-----------------------------------------------------\n`;
+
+            detectorLogs.forEach((item, idx) => {
+                txt += `${idx + 1}. [${item.date}] ${item.type} | 장소: ${item.location} (${item.address})\n`;
+                txt += `   - 종류: ${item.detectorType || '연기감지기'} | 담당자: ${item.assignee || '미지정'}\n`;
+                txt += `   - 내역: ${item.desc}\n`;
+                txt += `   - 원인: ${item.cause} | 상태: ${item.status}\n\n`;
+            });
+            txt += `=====================================================\n`;
+
+            downloadFile(txt, `${cur.title.replace(/\s+/g, '_')}_보고서.txt`, 'text/plain;charset=utf-8');
+            showToast("TXT 보고서 파일이 다운로드되었습니다.");
+        }
+
+        function exportDataDOC() {
+            saveCurrentDashboardState();
+            const cur = getActiveDashboard();
+            
+            let docHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><title>${cur.title}</title>
+            <style>
+                body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 11pt; line-height: 1.5; }
+                h1 { font-size: 18pt; color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 5px; }
+                table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+                th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; font-size: 10pt; }
+                th { background-color: #f1f5f9; color: #0f172a; }
+                .meta { background-color: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; font-size: 10pt; }
+            </style>
+            </head><body>
+            <h1>${cur.title}</h1>
+            <div class="meta">
+                <p><b>관제 기간:</b> ${cur.period} | <b>담당 부서:</b> ${cur.dept}</p>
+                <p><b>대상 구역:</b> ${cur.target} | <b>출력 일시:</b> ${new Date().toLocaleString()}</p>
+                <p><b>개요:</b> ${cur.desc}</p>
+            </div>
+            <h3>■ 감시 및 고장 내역 상세</h3>
+            <table>
+                <thead>
+                 <tr>
+                  <th>일자</th>
+                  <th>구분</th>
+                  <th>동/층</th>
+                  <th>Address</th>
+                  <th>장치 종류</th>
+                  <th>상세 내역</th>
+                  <th>추정 원인</th>
+                  <th>담당자</th>
+                  <th>현재 상태 / 비고</th>
+                 </tr>
+                </thead>
+                <tbody>`;
+
+            detectorLogs.forEach(item => {
+                docHtml += `<tr>
+                    <td>${item.date}</td><td><b>${item.type}</b></td><td>${item.location}</td><td>${item.address}</td>
+                    <td>${item.detectorType || '연기감지기'}</td><td>${item.desc}</td><td>${item.cause}</td>
+                    <td>${item.assignee || '미지정'}</td><td>${item.status}</td>
+                </tr>`;
+            });
+
+            docHtml += `</tbody></table></body></html>`;
+
+            downloadFile(docHtml, `${cur.title.replace(/\s+/g, '_')}_보고서.doc`, 'application/msword;charset=utf-8');
+            showToast("DOC 워드 파일이 다운로드되었습니다.");
+        }
+
+        function exportDataJSON() {
+            saveCurrentDashboardState();
+            const cur = getActiveDashboard();
+            const jsonStr = JSON.stringify(cur, null, 2);
+            downloadFile(jsonStr, `${cur.title.replace(/\s+/g, '_')}_백업.json`, 'application/json');
+            showToast("JSON 백업 파일이 다운로드되었습니다.");
+        }
+
+        function downloadFile(content, fileName, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
