@@ -808,6 +808,7 @@
                 <input type="checkbox" id="login-keep" checked style="width:15px;height:15px"> 이 기기에서 로그인 유지 <span class="text-slate-400">(공용 PC는 해제)</span>
             </label>
             <div id="login-error" class="hidden bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-3 py-2 font-semibold"></div>
+            <div id="login-diag" class="text-[10.5px] text-slate-400 break-all"></div>
             <button type="submit" id="login-submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded-lg font-bold shadow flex items-center justify-center gap-1.5 transition">
                 <i class="fa-solid fa-right-to-bracket"></i> 로그인
             </button>
@@ -966,6 +967,7 @@
             });
         }
 
+        let ticketErrors = {};
         async function tryTicket(role, pin) {
             try {
                 await db.collection("fire_tickets").doc(role).set({
@@ -973,11 +975,14 @@
                 });
                 return true;
             } catch (e) {
+                ticketErrors[role] = (e && e.code) || String(e);
+                console.warn('[비밀번호 확인] ' + role + ' 티켓 쓰기 거부/실패:', e && e.code, e && e.message);
                 if (e && e.code === 'permission-denied') return false;
                 throw e;
             }
         }
         async function verifyPin(pin) {
+            ticketErrors = {};
             if (await tryTicket('admin', pin)) return 'admin';
             if (await tryTicket('user', pin)) return 'user';
             return null;
@@ -990,6 +995,8 @@
             el.classList.toggle('hidden', !msg);
         }
         function openLoginModal() {
+            const dg0 = document.getElementById('login-diag');
+            if (dg0) dg0.innerText = '';
             document.getElementById('login-modal').classList.remove('hidden');
             loginError('');
             const pw = document.getElementById('login-password');
@@ -1032,7 +1039,17 @@
             loginError('');
             try {
                 const role = await verifyPin(pw);
-                if (!role) { loginError('비밀번호가 올바르지 않습니다.'); pwEl.select(); return; }
+                if (!role) {
+                    const diag = `진단: 관리자=${ticketErrors.admin || '-'} · 사용자=${ticketErrors.user || '-'} · 조회연결=${cloudReady ? '정상' : (cloudBlocked ? '거부/오류' : '확인중')}`;
+                    console.warn('[로그인 실패]', diag);
+                    loginError(cloudBlocked
+                        ? '조회 권한이 거부되어 있습니다. 보안 규칙이 이 앱 버전과 맞는지 확인하세요.'
+                        : '비밀번호가 올바르지 않거나, 규칙·비밀번호 문서(fire_config/pins) 설정이 맞지 않습니다.');
+                    const dg = document.getElementById('login-diag');
+                    if (dg) dg.innerText = diag;
+                    pwEl.select();
+                    return;
+                }
                 currentRole = role;
                 sessionPin = pw;
                 saveSession(keep);
