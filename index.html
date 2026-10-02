@@ -595,6 +595,8 @@
                 <button type="button" onclick="applyPreset('램프')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🚗 램프 누수</button>
                 <button type="button" onclick="applyPreset('결로')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">❄️ 냉장창고 결로</button>
                 <button type="button" onclick="applyPreset('그레이팅')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🌧️ 스틸그레이팅 노출</button>
+                <button type="button" onclick="applyPreset('조작실수')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">👆 수동스위치 오조작</button>
+                <button type="button" onclick="applyPreset('조리증기')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">♨️ 조리·청소 증기</button>
             </div>
 
             <form id="add-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-3.5 text-xs overflow-y-auto flex-1">
@@ -661,6 +663,8 @@
                             <option value="누수/침수">누수/침수</option>
                             <option value="결로현상">결로현상</option>
                             <option value="감지기고장">감지기고장</option>
+                            <option value="조작실수">조작실수</option>
+                            <option value="조리·증기">조리·증기</option>
                             <option value="오동작">오동작</option>
                             <option value="기타">기타</option>
                         </select>
@@ -1872,7 +1876,7 @@
         function classifyFactor(item) {
             const t = `${item.desc || ''} ${item.status || ''}`;
             for (const f of SITE_FACTORS) if (f.re.test(t)) return f.key;
-            const byCause = { '누수/침수':'누수·우천', '결로현상':'결로·습기', '외부노출/방풍실':'방풍실·외기노출', '감지기고장':'감지기 불량' };
+            const byCause = { '누수/침수':'누수·우천', '결로현상':'결로·습기', '외부노출/방풍실':'방풍실·외기노출', '감지기고장':'감지기 불량', '조작실수':'조작실수', '조리·증기':'조리 열·증기' };
             return byCause[item.cause] || '기타 원인';
         }
 
@@ -2049,6 +2053,8 @@
                 else if(item.cause === '결로현상') causeBadge = `<span class="text-amber-600 font-medium whitespace-nowrap"><i class="fa-solid fa-temperature-low mr-1"></i>결로</span>`;
                 else if(item.cause === '외부노출/방풍실') causeBadge = `<span class="text-sky-600 font-medium whitespace-nowrap"><i class="fa-solid fa-wind mr-1"></i>외부/방풍실</span>`;
                 else if(item.cause === '감지기고장') causeBadge = `<span class="text-purple-600 font-medium whitespace-nowrap"><i class="fa-solid fa-triangle-exclamation mr-1"></i>감지기고장</span>`;
+                else if(item.cause === '조작실수') causeBadge = `<span class="text-orange-600 font-medium whitespace-nowrap"><i class="fa-solid fa-hand-pointer mr-1"></i>조작실수</span>`;
+                else if(item.cause === '조리·증기') causeBadge = `<span class="text-emerald-600 font-medium whitespace-nowrap"><i class="fa-solid fa-fire-burner mr-1"></i>조리·증기</span>`;
                 else if(item.cause === '오동작') causeBadge = `<span class="text-purple-600 font-medium whitespace-nowrap"><i class="fa-solid fa-triangle-exclamation mr-1"></i>오동작</span>`;    
                 else causeBadge = `<span class="text-slate-600 font-medium whitespace-nowrap"><i class="fa-solid fa-circle-info mr-1"></i>기타</span>`;
 
@@ -2146,14 +2152,14 @@
 
         function getCauseChartData() {
             const currentScope = getScopedLogs();
-            const causes = ['누수/침수', '결로현상', '외부노출/방풍실', '감지기고장', '오동작', '기타'];
+            const causes = ['누수/침수', '결로현상', '외부노출/방풍실', '감지기고장', '조작실수', '조리·증기', '오동작', '기타'];
             const counts = causes.map(c => currentScope.filter(l => l.cause === c).length);
 
             return {
                 labels: causes,
                 datasets: [{
                     data: counts,
-                    backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4', '#a855f7', '#64748b', '#94a3b8']
+                    backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4', '#a855f7', '#f97316', '#10b981', '#64748b', '#94a3b8']
                 }]
             };
         }
@@ -2269,7 +2275,9 @@
                 '방풍실':   { type: '고장',     det: '방화셔터 연기감지기', desc: '방풍실 내 습도 영향으로 감지기 오동작/탈거',            cause: '외부노출/방풍실', status: '감지기 탈거' },
                 '램프':     { type: '고장',     det: '아날로그 감지기',     desc: '주차장 램프 구간 누수/우천 유입으로 감지기 고장 탈거',  cause: '누수/침수',       status: '감지기 탈거' },
                 '결로':     { type: '고장',     det: '아날로그 감지기',     desc: '결로 현상으로 감지기 오동작/고장',                      cause: '결로현상',        status: '감지기 탈거' },
-                '그레이팅': { type: '비화재보', det: '일반 연기감지기',     desc: '스틸 그레이팅 구간 우천 습기로 감지기 오동작',          cause: '외부노출/방풍실', status: '점검완료' }
+                '그레이팅': { type: '비화재보', det: '일반 연기감지기',     desc: '스틸 그레이팅 구간 우천 습기로 감지기 오동작',          cause: '외부노출/방풍실', status: '점검완료' },
+                '조작실수': { type: '비화재보', det: '수동조작함',          desc: '직원 오인·오조작으로 수동기동스위치(발신기) 작동',        cause: '조작실수',        status: '점검완료' },
+                '조리증기': { type: '비화재보', det: '일반 연기감지기',     desc: '조리·물청소 중 발생한 증기 유입으로 감지기 동작',        cause: '조리·증기',       status: '점검완료' }
             }[type];
             if (!P) return;
             document.getElementById('form-date').value = `${now.getMonth() + 1}/${now.getDate()}`;
