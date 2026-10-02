@@ -19,6 +19,7 @@
 
     <style>
         body { font-family: 'Pretendard', sans-serif; }
+        body.role-viewer .user-only, body.role-viewer .admin-only, body.role-user .admin-only { display: none !important; }
         .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -202,25 +203,35 @@
 
             <!-- Action Controls -->
             <div class="flex items-center gap-2 w-full xl:w-auto justify-end flex-wrap flex-shrink-0">
-                <!-- 대시보드 선택 및 삭제 도구 -->
+                <div id="session-box" class="hidden flex items-center gap-1.5 bg-slate-800 px-2 py-1 rounded-lg border border-slate-700">
+                    <span id="role-badge" class="px-2 py-0.5 rounded-md text-[11px] font-bold">조회 전용</span>
+                    <button type="button" id="login-btn" onclick="openLoginModal()" class="text-amber-300 hover:text-amber-200 text-xs font-semibold px-1.5 py-0.5 transition whitespace-nowrap"><i class="fa-solid fa-lock"></i> 로그인</button>
+                    <button type="button" id="logout-btn" onclick="doLogout()" class="hidden text-slate-400 hover:text-white text-xs px-1.5 py-0.5 transition whitespace-nowrap"><i class="fa-solid fa-right-from-bracket"></i> 로그아웃</button>
+                </div>
+
+<!-- 대시보드 선택 및 삭제 도구 -->
                 <div class="flex items-center gap-1.5 bg-slate-800 p-1 rounded-lg border border-slate-700">
                     <select id="dash-selector" onchange="switchDashboard(this.value)" class="bg-transparent text-slate-100 text-xs font-semibold px-2 py-1 focus:outline-none cursor-pointer max-w-[210px] text-ellipsis">
                         <!-- JS Populated -->
                     </select>
-                    <button type="button" onclick="askDeleteCurrentDashboard()" class="text-slate-400 hover:text-rose-400 p-1 text-xs transition" title="현재 선택된 대시보드 삭제">
+                    <button type="button" onclick="askDeleteCurrentDashboard()" class="admin-only text-slate-400 hover:text-rose-400 p-1 text-xs transition" title="현재 선택된 대시보드 삭제">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
 
-                <button onclick="openNewDashModal()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5 text-xs whitespace-nowrap" title="새 관제 대시보드 만들기 (예: 10월 대시보드)">
+                <button onclick="openNewDashModal()" class="admin-only px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5 text-xs whitespace-nowrap" title="새 관제 대시보드 만들기 (예: 10월 대시보드)">
                     <i class="fa-solid fa-folder-plus"></i> 신규 대시보드
                 </button>
 
-                <button onclick="openPdfModal()" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs ring-2 ring-amber-400/40 whitespace-nowrap" title="기간별 공식 PDF 보고서 저장 및 인쇄">
+                <button onclick="openRecoveryModal()" class="admin-only px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 font-semibold rounded-lg border border-slate-700 transition flex items-center gap-1.5 text-xs whitespace-nowrap" title="누락 이력 복구 / 백업">
+                    <i class="fa-solid fa-life-ring"></i> 복구/백업
+                </button>
+
+                <button onclick="openPdfModal()" class="user-only px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs ring-2 ring-amber-400/40 whitespace-nowrap" title="기간별 공식 PDF 보고서 저장 및 인쇄">
                     <i class="fa-solid fa-file-pdf"></i> PDF 보고서 / 인쇄
                 </button>
 
-                <div class="relative group">
+                <div class="user-only relative group">
                     <button class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs whitespace-nowrap">
                         <i class="fa-solid fa-file-export"></i> 내보내기 <i class="fa-solid fa-chevron-down text-[10px]"></i>
                     </button>
@@ -234,13 +245,13 @@
                         <button onclick="exportDataDOC()" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2">
                             <i class="fa-solid fa-file-word text-indigo-600"></i> DOC (MS 워드 문서)
                         </button>
-                        <button onclick="exportDataJSON()" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100">
+                        <button onclick="exportDataJSON()" class="admin-only w-full text-left px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100">
                             <i class="fa-solid fa-code text-amber-600"></i> JSON (전체 백업)
                         </button>
                     </div>
                 </div>
 
-                <button onclick="openAddModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs whitespace-nowrap">
+                <button onclick="openAddModal()" class="user-only px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5 text-xs whitespace-nowrap">
                     <i class="fa-solid fa-plus"></i> 이력 추가
                 </button>
             </div>
@@ -275,7 +286,7 @@
                 </div>
                 <div class="text-xs text-slate-500 flex items-center gap-3">
                     <span id="period-summary-badge" class="px-3 py-1 bg-slate-100 rounded-lg font-bold text-slate-700">전체 조회 중</span>
-                    <button onclick="openPdfModal()" class="text-amber-600 hover:text-amber-700 font-bold hover:underline flex items-center gap-1">
+                    <button onclick="openPdfModal()" class="user-only text-amber-600 hover:text-amber-700 font-bold hover:underline flex items-center gap-1">
                         <i class="fa-solid fa-file-pdf"></i> 이 기간으로 PDF 보고서 출력
                     </button>
                 </div>
@@ -408,7 +419,7 @@
                                 <th class="px-3 py-3 w-28 whitespace-nowrap">추정 원인</th>
                                 <th class="px-3 py-3 w-24 whitespace-nowrap">담당자</th>
                                 <th class="px-3 py-3 w-28 text-center whitespace-nowrap">현재 상태</th>
-                                <th class="px-3 py-3 w-32 text-center no-print whitespace-nowrap sticky right-0 bg-slate-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] border-l border-slate-200">내역 관리</th>
+                                <th class="user-only px-3 py-3 w-32 text-center no-print whitespace-nowrap sticky right-0 bg-slate-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] border-l border-slate-200">내역 관리</th>
                             </tr>
                         </thead>
                         <tbody id="table-body" class="divide-y divide-slate-100">
@@ -441,7 +452,7 @@
                     <h2 class="text-xl font-bold">우천·결로·누수 감지기 비화재보 및 고장 재발방지 대책</h2>
                     <p class="text-xs text-slate-400 mt-1">집중호우, 결로 및 습기 증가에 따른 장비 안정화 및 수신기 관리 방안</p>
                 </div>
-                <button onclick="openPdfModal()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-lg text-xs shadow-md flex items-center gap-2 transition">
+                <button onclick="openPdfModal()" class="user-only px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-lg text-xs shadow-md flex items-center gap-2 transition">
                     <i class="fa-solid fa-file-pdf text-amber-300"></i> PDF 보고서 출력 / 저장
                 </button>
             </div>
@@ -611,7 +622,7 @@
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Address 번호</label>
-                        <input type="text" id="form-address" required placeholder="예: 0436-1215" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                        <input type="text" id="form-address" required placeholder="예: 0000-0000" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
                     </div>
                 </div>
 
@@ -633,7 +644,7 @@
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">담당자/조치자</label>
-                        <input type="text" id="form-assignee" placeholder="예: 심준서" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="text" id="form-assignee" placeholder="예: 홍길동" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
 
@@ -761,6 +772,48 @@
         </div>
     </div>
 
+    <!-- 누락 이력 복구 / 백업 모달 -->
+    <div id="recovery-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div onclick="event.stopPropagation()" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 max-h-[90vh] flex flex-col">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-life-ring text-emerald-400"></i> 누락 이력 복구 / 백업</h3>
+                <button type="button" onclick="closeRecoveryModal()" class="text-slate-400 hover:text-white transition p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="px-6 pt-4 text-xs text-slate-500 leading-relaxed">
+                현재 대시보드에 없는 이력을 이 기기 로컬 보관분, 다른 대시보드, fire_logs, 자동 백업에서 찾았습니다. 내용을 확인하고 병합할 항목만 선택하세요. (fire_logs 변환 값은 미리보기에서 꼭 확인)
+                <div id="recovery-status" class="mt-1 text-amber-600 font-semibold"></div>
+            </div>
+            <div id="recovery-list" class="p-6 space-y-2 text-xs overflow-y-auto flex-1"></div>
+            <div class="px-6 py-3 border-t border-slate-100 flex justify-between items-center gap-2 text-xs">
+                <button type="button" onclick="exportRescueJSON()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium"><i class="fa-solid fa-download mr-1"></i>이 기기 로컬 데이터 JSON 저장</button>
+                <label class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-medium cursor-pointer"><i class="fa-solid fa-file-import mr-1"></i>JSON 파일 불러오기<input type="file" accept=".json,application/json" class="hidden" onchange="handleRecoveryFile(this)"></label>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeRecoveryModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium">닫기</button>
+                    <button type="button" onclick="applyRecovery()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold shadow">선택 항목 병합</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로그인(비밀번호) 모달: 사용자/관리자는 비밀번호로 자동 구분 -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <form onsubmit="handleLoginSubmit(event)" onclick="event.stopPropagation()" class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-6 space-y-4 text-xs border border-slate-200">
+            <div class="flex items-center justify-between">
+                <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-lock text-blue-600"></i> 로그인</h3>
+                <button type="button" onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-700 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-slate-500 leading-relaxed">배포받은 비밀번호를 입력하세요.<br>사용자: 입력·출력 / 관리자: 삭제 포함 전체 권한</p>
+            <input type="password" id="login-password" autocomplete="current-password" placeholder="비밀번호" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <label class="flex items-center gap-2 text-slate-600 cursor-pointer">
+                <input type="checkbox" id="login-keep" checked style="width:15px;height:15px"> 이 기기에서 로그인 유지 <span class="text-slate-400">(공용 PC는 해제)</span>
+            </label>
+            <div id="login-error" class="hidden bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-3 py-2 font-semibold"></div>
+            <button type="submit" id="login-submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded-lg font-bold shadow flex items-center justify-center gap-1.5 transition">
+                <i class="fa-solid fa-right-to-bracket"></i> 로그인
+            </button>
+        </form>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none z-50 text-xs">
         <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
@@ -785,7 +838,7 @@
         let db = null;
         let deleteTargetId = null;
 
-        // 원그로브 2026년 전체 58건 종합 소방시설 관제 데이터 세트 (공식 마스터 원본)
+        // 마스터 대시보드 기본 정보만 보관합니다. 이력 데이터는 소스에 두지 않고 Firebase DB에만 저장합니다.
         const LATEST_DASHBOARD_DATA = {
             "id": "dash-2026-master-v3",
             "title": "2026년 소방시설 비화재보/고장/감시 이력관리",
@@ -794,73 +847,7 @@
             "target": "A/B/C/D동 전 구역",
             "desc": "결로, 누수 및 외부 습기 관련 비화재보/고장/감시 이력 모니터링",
             "updatedAt": "2026. 10. 2. 오전 8:10:00",
-            "logs": [
-                // 9월 실제 발생 데이터 (16건)
-                { "id": 1785000000016, "date": "9/28", "type": "비화재보", "location": "A/B2F", "building": "A", "address": "0403-2051", "detectorType": "일반 연기감지기", "assignee": "심준서/이상현", "desc": "A동 지하2층 트레이더스 초밥코너 결로로 인해 연감지기 동작 (이마트 시설팀 천장 타공부분 실리콘 처리하고 재부착후 복구완료 / 출력: 지구경종, 비상방송, 시각경보기, 방화셔터)", "cause": "결로현상", "status": "점검완료" },
-                { "id": 1785000000015, "date": "9/28", "type": "비화재보", "location": "A/7F", "building": "A", "address": "0014-2136", "detectorType": "수동조작함", "assignee": "심준서", "desc": "4번계단 배기 수동조작 기동스위치를 전등스위치로 오인해서 DL 여직원이 수동스위치 누름", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000014, "date": "9/28", "type": "비화재보", "location": "A/B2F", "building": "A", "address": "0014-2164", "detectorType": "수동조작함", "assignee": "심준서", "desc": "A동 지하2층 피난안전구역내에 있는 급기댐퍼동작 현재 원인파악중", "cause": "오동작", "status": "점검중" },
-                { "id": 1785000000013, "date": "9/28", "type": "감시", "location": "D/B2F", "building": "D", "address": "0434-0078", "detectorType": "기 타", "assignee": "심준서/박현인", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 1-6), 선로수정작업-동성처리", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000012, "date": "9/28", "type": "감시", "location": "C/B1F", "building": "C", "address": "0434-0082", "detectorType": "기 타", "assignee": "박상현/이남원", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 1-8) → 결선 수정후 야간 테스트 완료", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000011, "date": "9/28", "type": "감시", "location": "B/B2F", "building": "B", "address": "0403-0068", "detectorType": "기 타", "assignee": "심준서/박현인", "desc": "화재신호로 인한 방화셔터 2차폐쇄 확인(F/S 2-8) 연동제어기 결선 수정 후 정상-동성 방문처리", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000010, "date": "9/26", "type": "비화재보", "location": "C/B2F", "building": "C", "address": "0424-2018", "detectorType": "일반 열감지기", "assignee": "김병일/이혁기", "desc": "C동 지하2층 트레이더스 직원식당 조리중 열기로 예경발생, 지속될 염려로 탈거 조치 후 09.28 감지기 재부착 및 입력차단해제", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000009, "date": "9/22", "type": "비화재보", "location": "A/B1F", "building": "A", "address": "0405-0648", "detectorType": "수동조작함", "assignee": "이규현/박현인", "desc": "무브먼트랩 직원이 실수로 오동작 (조작실수 주의전달)", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000008, "date": "9/18", "type": "고장", "location": "A/2F", "building": "A", "address": "0410-0038", "detectorType": "수동조작함", "assignee": "이남원/한동구", "desc": "제연수동조작함 이설 야간작업 후 복구연결 처리예정 (임시 입력차단 처리 후 차단해제)", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000007, "date": "9/18", "type": "비화재보", "location": "A/1F", "building": "A", "address": "0407-1090", "detectorType": "일반 열감지기", "assignee": "이규현", "desc": "키쿠가와 주방 정온식 감지기 조리 중 발생한 열로 인해 비화재보 발생", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000006, "date": "9/14", "type": "비화재보", "location": "A/11F", "building": "A", "address": "0019-2048", "detectorType": "일반 열감지기", "assignee": "이규현", "desc": "DL주방 조리중 발생한 열로 인한 비화재보 현장확인", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000005, "date": "9/12", "type": "고장", "location": "B/2F", "building": "B", "address": "0420-3050", "detectorType": "일반 열감지기", "assignee": "이규현", "desc": "B동 2층 빕스 식기세척실내 열감지기 지속적인 고장발생 (교체완료 및 입력차단 해제)", "cause": "감지기고장", "status": "점검완료" },
-                { "id": 1785000000004, "date": "9/4", "type": "고장", "location": "D/3F", "building": "D", "address": "0303-0089", "detectorType": "일반 연기감지기", "assignee": "김학제/이남원", "desc": "페인트 도색작업중 보양상태 불량 (해리슨스트릿아시아) → 현장 주의전달", "cause": "기타", "status": "점검완료" },
-                { "id": 1785000000003, "date": "9/3", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0425-3015", "detectorType": "일반 연기감지기", "assignee": "이규현/오지환", "desc": "19:15 계단실내 환기불량 및 습기로 인한 감지기 오동작 경보발생, 감지기 청소 후 재부착", "cause": "외부노출/방풍실", "status": "점검완료" },
-                { "id": 1785000000002, "date": "9/2", "type": "고장", "location": "A/B2F", "building": "A", "address": "0413-3043,3044", "detectorType": "방화셔터 연기감지기", "assignee": "박현인/한동구", "desc": "A동 지하2층 신선식품코너 상부 감지기 결로현상으로 감지기 탈거, 이마트시설팀 조치 후 취부 및 입력차단해제", "cause": "결로현상", "status": "점검완료" },
-                { "id": 1785000000001, "date": "9/1", "type": "고장", "location": "A/B2F", "building": "A", "address": "0413-3044~84 (40개소)", "detectorType": "기 타", "assignee": "한동구", "desc": "C동 지하2층 트레이더스 방화셔터 감지기 선로단선, 감지기 결로로인한 베이스 관통부 폼작업 중 베이스 선로 분리로인한 43번 감지기 후단 선로 고장 발생 (이마트 시설팀), 방재실에서 현장 확인 후 선로 재연결 및 베이스 교체 후 정상", "cause": "기타", "status": "점검완료" },
-
-                // 8월 데이터 (18건)
-                { "id": 1784800000018, "date": "8/29", "type": "고장", "location": "A/B2F", "building": "A", "address": "0403-1090", "detectorType": "방화셔터 연기감지기", "assignee": "심준서", "desc": "A동 B2 트레이더스 하역장 셔터 감지기 손상 탈거", "cause": "감지기고장", "status": "감지기 탈거" },
-                { "id": 1784800000017, "date": "8/27", "type": "비화재보", "location": "B/3F", "building": "B", "address": "0416-2001", "detectorType": "일반 연기감지기", "assignee": "김학제", "desc": "B동 3층 복도 공조기 재가동 시 먼지 비산으로 감지기 동작", "cause": "오동작", "status": "점검완료" },
-                { "id": 1784800000016, "date": "8/25", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1250", "detectorType": "아날로그 감지기", "assignee": "김근철", "desc": "C동 B1 보행통로 결로로 회로 저항 이상", "cause": "결로현상", "status": "입력차단" },
-                { "id": 1784800000015, "date": "8/24", "type": "비화재보", "location": "D/2F", "building": "D", "address": "0303-1120", "detectorType": "아날로그 감지기", "assignee": "박현인", "desc": "D동 2층 임대구역 인테리어 분진 감지기 흡착", "cause": "기타", "status": "점검완료" },
-                { "id": 1784800000014, "date": "8/22", "type": "고장", "location": "A/1F", "building": "A", "address": "0412-2022", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 1층 방풍실 내부 감지기 우천 습기 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
-                { "id": 1784800000013, "date": "8/20", "type": "비화재보", "location": "C/B2F", "building": "C", "address": "0435-1014", "detectorType": "일반 연기감지기", "assignee": "이규현", "desc": "C동 B2 주차구역 바닥 청소차량 배기가스 감지", "cause": "오동작", "status": "점검완료" },
-                { "id": 1784800000012, "date": "8/18", "type": "감시", "location": "B/B2F", "building": "B", "address": "0402-0055", "detectorType": "수동조작함", "assignee": "심준서", "desc": "B동 지하2층 셔터 수동조작함 접점 불량 신호 감시", "cause": "기타", "status": "점검완료" },
-                { "id": 1784800000011, "date": "8/16", "type": "고장", "location": "D/B3F", "building": "D", "address": "0433-2015", "detectorType": "일반 열감지기", "assignee": "김학제", "desc": "D동 지하3층 기계실 천장 누수 유입 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
-                { "id": 1784800000010, "date": "8/15", "type": "비화재보", "location": "A/B1F", "building": "A", "address": "0414-1080", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 지하1층 방풍실 고습도 결로현상 비화재보", "cause": "외부노출/방풍실", "status": "점검완료" },
-                { "id": 1784800000009, "date": "8/13", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-1002", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 램프 출입구 폭우 낙수 센서 침수 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
-                { "id": 1784800000008, "date": "8/11", "type": "비화재보", "location": "B/B1F", "building": "B", "address": "0414-2055", "detectorType": "일반 연기감지기", "assignee": "심준서", "desc": "B동 B1 식당가 주방 결로 연기감지기 동작", "cause": "결로현상", "status": "점검완료" },
-                { "id": 1784800000007, "date": "8/10", "type": "고장", "location": "A/2F", "building": "A", "address": "0413-1025", "detectorType": "발신기", "assignee": "박상현", "desc": "A동 2층 발신기 세트 단자 부식 단선", "cause": "감지기고장", "status": "점검완료" },
-                { "id": 1784800000006, "date": "8/08", "type": "비화재보", "location": "D/4F", "building": "D", "address": "0301-1150", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "D동 4층 연구실 에어컨 드레인 역류 수증기 비화재보", "cause": "결로현상", "status": "점검완료" },
-                { "id": 1784800000005, "date": "8/06", "type": "감시", "location": "C/B1F", "building": "C", "address": "0436-0045", "detectorType": "기 타", "assignee": "김근철", "desc": "C동 지하1층 방화셔터 연동 수신기 입력 신호 일시 감시", "cause": "기타", "status": "점검완료" },
-                { "id": 1784800000004, "date": "8/05", "type": "고장", "location": "B/B2F", "building": "B", "address": "0403-2011", "detectorType": "아날로그 감지기", "assignee": "박현인", "desc": "B동 지하2층 냉장창고 앞 결로 물방울 단선 탈거", "cause": "결로현상", "status": "감지기 탈거" },
-                { "id": 1784800000003, "date": "8/04", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0436-2090", "detectorType": "일반 연기감지기", "assignee": "동성", "desc": "스틸 그레이팅 구간 국지성 호우 습기 오동작", "cause": "외부노출/방풍실", "status": "점검완료" },
-                { "id": 1784800000002, "date": "8/02", "type": "고장", "location": "A/B1F", "building": "A", "address": "0414-1011", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 방풍실 출입문 개방에 따른 센서 수분 고장", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
-                { "id": 1784800000001, "date": "8/01", "type": "비화재보", "location": "D/B1F", "building": "D", "address": "0436-1022", "detectorType": "정온식 방수형", "assignee": "김학제", "desc": "D동 지하1층 식당 주방 고온 증기 급증 오동작", "cause": "기타", "status": "점검완료" },
-
-                // 7월 데이터 (24건)
-                { "id": 1784706855688, "date": "7/30", "type": "비화재보", "location": "C/1F", "building": "C", "address": "0428-3034", "detectorType": "일반 연기감지기", "assignee": "심준서/박현인", "desc": "C동 1층 비상발전기 무부하운전후 연통열기로 정온식감지기B(0428-3033)와 연기감지기A(0428-3034) 동작 비화재보 발생 → 현장 문개방 배기팬 수동기동&소화전 사용", "cause": "기타", "status": "점검완료" },
-                { "id": 1784706855689, "date": "7/30", "type": "고장", "location": "A/4F", "building": "A", "address": "0014-0041", "detectorType": "기 타", "assignee": "김근철/김학제", "desc": "EV전실 급기댐퍼 잦은 고장신호 입력차단. 중계기 교체예정 → 7/31 중계기 교체완료", "cause": "기타", "status": "점검완료" },
-                { "id": 1784706855687, "date": "7/30", "type": "비화재보", "location": "D/4F", "building": "D", "address": "0301-2205", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "MRI실 헬륨가스 압력조절 작업중 가스감지기 동작", "cause": "기타", "status": "점검완료" },
-                { "id": 1784702751986, "date": "7/28", "type": "고장", "location": "B/B1F", "building": "B", "address": "0414-3011", "detectorType": "아날로그 감지기", "assignee": "김학제", "desc": "브릭샌드 매장내 연기감지기 단선- 영업중 탈거 곤란함", "cause": "결로현상", "status": "창가측 우천영향" },
-                { "id": 1784685910697, "date": "7/27", "type": "고장", "location": "D/B1F", "building": "D", "address": "0436-1033", "detectorType": "아날로그 감지기", "assignee": "박현인", "desc": "D동 지하1층 스타벅스 주방내 정온식감지기 결로현상", "cause": "결로현상", "status": "감지기 탈거" },
-                { "id": 1784685735936, "date": "7/26", "type": "비화재보", "location": "B/B1F", "building": "B", "address": "0414-2097", "detectorType": "방화셔터 연기감지기", "assignee": "박현인", "desc": "디라이프스타일키친 방화셔터 연기감지기 비화재보", "cause": "결로현상", "status": "감지기 탈거" },
-                { "id": 1784620545260, "date": "7/25", "type": "고장", "location": "B/B1F", "building": "B", "address": "0414-1037", "detectorType": "방화셔터 연기감지기", "assignee": "박상현", "desc": "방풍실내 높은 습도영향", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
-                { "id": 1784700000019, "date": "7/24", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0436-1215", "detectorType": "일반 연기감지기", "assignee": "김근철", "desc": "C동 지하1층 보행통로 결로 및 에어컨 가동 온습도차 비화재보", "cause": "결로현상", "status": "점검완료" },
-                { "id": 1784700000018, "date": "7/23", "type": "고장", "location": "A/1F", "building": "A", "address": "0414-1020", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 1층 로비 출입구 방풍실 셔터 연기감지기 헤드 결로 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
-                { "id": 1784700000017, "date": "7/22", "type": "비화재보", "location": "B/B2F", "building": "B", "address": "0403-1049", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "B동 지하2층 트레이더스 냉장창고 출입문 개폐 시 결로 비화재보", "cause": "결로현상", "status": "점검완료" },
-                { "id": 1784700000016, "date": "7/22", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3019", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 주차장 램프 구간 천장 누수 유입 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
-                { "id": 1784700000015, "date": "7/21", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1212", "detectorType": "방화셔터 연기감지기", "assignee": "김근철", "desc": "C동 지하1층 ABC마트옆 방풍실내 연기감지기 고장 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
-                { "id": 1784700000014, "date": "7/21", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3023", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
-                { "id": 1784700000013, "date": "7/21", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-3018", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거", "cause": "누수/침수", "status": "감지기 탈거" },
-                { "id": 1784700000012, "date": "7/21", "type": "고장", "location": "A/B1F", "building": "A", "address": "0414-1043", "detectorType": "방화셔터 연기감지기", "assignee": "이혁기", "desc": "A동 지하1층 방풍실 방화셔터 연기감지기 고장 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
-                { "id": 1784700000011, "date": "7/20", "type": "비화재보", "location": "A/B2F", "building": "A", "address": "0403-2015", "detectorType": "일반 연기감지기", "assignee": "심준서", "desc": "A동 B2F 분리수거장 주변 습기 증가로 감지기 비화재보", "cause": "결로현상", "status": "점검완료" },
-                { "id": 1784700000010, "date": "7/19", "type": "감시", "location": "D/B2F", "building": "D", "address": "0435-0012", "detectorType": "기 타", "assignee": "김학제", "desc": "D동 지하2층 소방 밸브 탬퍼스위치 감시 신호 확인 후 복구", "cause": "기타", "status": "점검완료" },
-                { "id": 1784700000009, "date": "7/18", "type": "고장", "location": "B/1F", "building": "B", "address": "0413-1008", "detectorType": "일반 연기감지기", "assignee": "박현인", "desc": "B동 1층 주출입구 결로 습기 유입으로 센서 오작동 탈거", "cause": "외부노출/방풍실", "status": "감지기 탈거" },
-                { "id": 1784700000008, "date": "7/17", "type": "고장", "location": "C/B1F", "building": "C", "address": "0436-1213", "detectorType": "방화셔터 연기감지기", "assignee": "김근철", "desc": "C동 지하1층 ABC마트 방화셔터연기 감지기 고장 탈거\n07/20 재부착 차단해제", "cause": "외부노출/방풍실", "status": "점검완료" },
-                { "id": 1784700000007, "date": "7/15", "type": "비화재보", "location": "B/B2F", "building": "B", "address": "0403-1045", "detectorType": "아날로그 감지기", "assignee": "심준서", "desc": "B동 지하2층 분리수거장 입구 앞 트레이더스 매장 냉장창고 결로현상", "cause": "결로현상", "status": "입력차단" },
-                { "id": 1784700000006, "date": "7/13", "type": "비화재보", "location": "D/3F", "building": "D", "address": "0304-1011", "detectorType": "일반 열감지기", "assignee": "김학제", "desc": "D동 3층 탕비실 온수기 과열 증기로 열감지기 비화재보", "cause": "오동작", "status": "점검완료" },
-                { "id": 1784700000005, "date": "7/11", "type": "고장", "location": "A/B2F", "building": "A", "address": "0402-3004", "detectorType": "아날로그 감지기", "assignee": "이혁기", "desc": "A동 B2F 물탱크실 인근 결로 센서 회로 저항 불량", "cause": "결로현상", "status": "입력차단" },
-                { "id": 1784700000004, "date": "7/10", "type": "비화재보", "location": "C/B1F", "building": "C", "address": "0436-2070", "detectorType": "일반 연기감지기", "assignee": "동성", "desc": "C동~D동 보행통로 중간 스틸 그레이팅 상단 위 70번 감지기 비화재보 고장", "cause": "외부노출/방풍실", "status": "점검완료" },
-                { "id": 1784700000003, "date": "7/08", "type": "고장", "location": "D/B3F", "building": "D", "address": "0433-3031", "detectorType": "일반 연기감지기", "assignee": "이혁기", "desc": "A1~A2기둥 사이 누수로 연기 감지기 고장 탈거", "cause": "누수/침수", "status": "입력차단" },
-                { "id": 1784700000002, "date": "7/05", "type": "비화재보", "location": "B/1F", "building": "B", "address": "0412-1005", "detectorType": "방화셔터 연기감지기", "assignee": "박상현", "desc": "B동 1층 출입구 비바람 유입으로 셔터 감지기 비화재보", "cause": "외부노출/방풍실", "status": "점검완료" },
-                { "id": 1784700000001, "date": "7/02", "type": "고장", "location": "C/1F", "building": "C", "address": "0428-1001", "detectorType": "아날로그 감지기", "assignee": "이규현", "desc": "C동 1층 주차장 진입로 빗물 유입으로 인한 감지기 탈거", "cause": "누수/침수", "status": "감지기 탈거" }
-            ]
+            "logs": []
         };
 
         let dashboards = [];
@@ -872,8 +859,229 @@
         let selectedPeriodFilter = "ALL";
         let rowDisplayLimit = 10;
 
+        /* =========================================================================
+           [저장 안전 계층 + 3단계 접근 권한]
+           접근 단계
+             - 조회 전용 : 주소로 접속만 하면 조회 가능 (로그인 없음)
+             - 사용자    : 비밀번호 입력 시 이력 추가·수정 + 출력(PDF/CSV/TXT/DOC)
+             - 관리자    : 사용자 권한 + 이력 삭제·대시보드 생성/삭제·복구/백업·JSON 백업
+           비밀번호는 소스에 없습니다. Firestore 'fire_config/pins' 문서에만 있고,
+           저장 요청마다 함께 보내는 '티켓'을 Firestore 보안 규칙이 검증합니다. (firestore.rules 참고)
+           화면 버튼 숨김은 보조 수단이며, 실제 통제는 보안 규칙이 합니다.
+
+           저장 안전 규칙
+             1) 클라우드 쓰기는 '서버 스냅샷을 정상 수신한 뒤'에만 허용 (cloudReady)
+             2) 이력 저장은 트랜잭션 + id 단위 병합 (기기 간 동시 수정/덮어쓰기 방지)
+             3) 마스터/대시보드 문서는 '없을 때만' 생성. 기존 logs 배열은 절대 일괄 덮어쓰지 않음
+             4) 삭제 이력은 fire_logs_trash, 일 1회 이상 fire_backups 자동 백업
+             5) 로컬 안전망(fire_local_rescue): 이 기기에 있던 이력은 합집합으로 영구 보존
+        ========================================================================= */
+        let cloudReady = false;     // 서버 스냅샷을 정상 수신했는가
+        let cloudBlocked = false;   // 리스너 오류 등으로 클라우드 쓰기를 막아야 하는가
+        let backupDoneFor = '';
+        let localOnlyToastShown = false;
+        let sessionRestored = false;
+
+        let authActive = false;     // 비밀번호 체계 사용 여부 (Firebase 사용 시 true)
+        let currentRole = 'viewer'; // 'viewer' | 'user' | 'admin'
+        let sessionPin = '';
+        const SESSION_KEY = 'fire_session_v1';
+
+        function deepCopy(o) { return JSON.parse(JSON.stringify(o)); }
+        function nowIso() { return new Date().toISOString(); }
+        function ymd(d) {
+            return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+        }
+        function canEdit() { return !authActive || currentRole === 'user' || currentRole === 'admin'; }
+        function isAdmin() { return !authActive || currentRole === 'admin'; }
+        function requireEdit() {
+            if (canEdit()) return true;
+            showToast('🔒 조회 전용입니다. 입력·출력은 상단 [로그인]에서 비밀번호를 입력하세요.');
+            return false;
+        }
+        function requireAdmin() {
+            if (isAdmin()) return true;
+            showToast('⚠️ 관리자 권한이 필요한 기능입니다.');
+            return false;
+        }
+        function cloudReadable() { return !!(useFirebase && db && cloudReady && !cloudBlocked); }
+        function cloudWritable() { return cloudReadable() && (!authActive || (canEdit() && !!sessionPin)); }
+
+        function setCloudState(ok, msg) {
+            const ind = document.getElementById('firebase-indicator');
+            if (!ind) return;
+            ind.classList.remove('hidden', 'bg-rose-500', 'bg-emerald-500', 'bg-amber-500', 'animate-pulse');
+            ind.classList.add(ok ? 'bg-emerald-500' : 'bg-amber-500');
+            ind.title = msg;
+        }
+
+        // 로컬에 있던 이력을 합집합으로 보관 (이후 로컬이 클라우드 데이터로 덮여도 복구 가능)
+        function rescueLocalLogs() {
+            try {
+                const rescue = JSON.parse(localStorage.getItem('fire_local_rescue') || '{}');
+                const saved = JSON.parse(localStorage.getItem('fire_dashboards_v2') || '[]');
+                let changed = false;
+                (Array.isArray(saved) ? saved : []).forEach(d => (d.logs || []).forEach(l => {
+                    const k = d.id + '|' + l.id;
+                    if (!rescue[k]) { rescue[k] = { dashId: d.id, log: l }; changed = true; }
+                }));
+                if (changed) localStorage.setItem('fire_local_rescue', JSON.stringify(rescue));
+            } catch (e) { console.error('로컬 안전망 저장 실패', e); }
+        }
+
+        // 사용자가 의도적으로 삭제한 이력은 안전망에서도 제거 (복구 목록에 계속 뜨는 것 방지)
+        function rescueForget(match) {
+            try {
+                const rescue = JSON.parse(localStorage.getItem('fire_local_rescue') || '{}');
+                Object.keys(rescue).forEach(k => { if (match(k, rescue[k])) delete rescue[k]; });
+                localStorage.setItem('fire_local_rescue', JSON.stringify(rescue));
+            } catch (e) { console.error(e); }
+        }
+
+        /* ---------- 로그인(비밀번호) / 세션 ---------- */
+        function applyRoleUI() {
+            const b = document.body;
+            b.classList.remove('role-viewer', 'role-user', 'role-admin');
+            const box = document.getElementById('session-box');
+            if (!authActive) { if (box) box.classList.add('hidden'); return; }
+            b.classList.add('role-' + currentRole);
+            if (box) box.classList.remove('hidden');
+            const badge = document.getElementById('role-badge');
+            const loginBtn = document.getElementById('login-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const cfg = {
+                viewer: ['조회 전용', 'bg-slate-500/20 text-slate-300 border border-slate-400/40'],
+                user:   ['사용자',   'bg-sky-500/20 text-sky-300 border border-sky-400/40'],
+                admin:  ['관리자',   'bg-rose-500/20 text-rose-300 border border-rose-400/40']
+            }[currentRole];
+            if (badge) { badge.innerText = cfg[0]; badge.className = 'px-2 py-0.5 rounded-md text-[11px] font-bold ' + cfg[1]; }
+            if (loginBtn) loginBtn.classList.toggle('hidden', currentRole !== 'viewer');
+            if (logoutBtn) logoutBtn.classList.toggle('hidden', currentRole === 'viewer');
+        }
+
+        function stampTicket(writer) {   // 쓰기 요청마다 같은 트랜잭션/배치에 비밀번호 티켓을 포함
+            if (!authActive) return;
+            writer.set(db.collection("fire_tickets").doc(currentRole), {
+                role: currentRole, pin: sessionPin, ts: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        async function tryTicket(role, pin) {
+            try {
+                await db.collection("fire_tickets").doc(role).set({
+                    role, pin, ts: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                return true;
+            } catch (e) {
+                if (e && e.code === 'permission-denied') return false;
+                throw e;
+            }
+        }
+        async function verifyPin(pin) {
+            if (await tryTicket('admin', pin)) return 'admin';
+            if (await tryTicket('user', pin)) return 'user';
+            return null;
+        }
+
+        function loginError(msg) {
+            const el = document.getElementById('login-error');
+            if (!el) return;
+            el.innerText = msg || '';
+            el.classList.toggle('hidden', !msg);
+        }
+        function openLoginModal() {
+            document.getElementById('login-modal').classList.remove('hidden');
+            loginError('');
+            const pw = document.getElementById('login-password');
+            pw.value = '';
+            setTimeout(() => pw.focus(), 50);
+        }
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+        }
+
+        function saveSession(keep) {
+            try {
+                localStorage.removeItem(SESSION_KEY);
+                sessionStorage.removeItem(SESSION_KEY);
+                (keep ? localStorage : sessionStorage).setItem(SESSION_KEY, JSON.stringify({ pin: sessionPin }));
+            } catch (e) { /* ignore */ }
+        }
+        function clearSession() {
+            try { localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+        }
+
+        function afterRoleChange() {
+            applyRoleUI();
+            if (isAdmin() && authActive && cloudReady) {
+                seedMasterIfAbsent();
+                ensureDailyBackup(dashboards);
+                notifyLocalOnlyLogs();
+            }
+        }
+
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            if (!useFirebase || !db) { loginError('클라우드에 연결되지 않았습니다.'); return; }
+            const pwEl = document.getElementById('login-password');
+            const pw = pwEl.value.trim();
+            if (!pw) { loginError('비밀번호를 입력하세요.'); return; }
+            const keep = document.getElementById('login-keep').checked;
+            const btn = document.getElementById('login-submit');
+            btn.disabled = true;
+            loginError('');
+            try {
+                const role = await verifyPin(pw);
+                if (!role) { loginError('비밀번호가 올바르지 않습니다.'); pwEl.select(); return; }
+                currentRole = role;
+                sessionPin = pw;
+                saveSession(keep);
+                closeLoginModal();
+                afterRoleChange();
+                showToast(role === 'admin' ? '관리자로 로그인되었습니다.' : '사용자로 로그인되었습니다. (입력·출력 가능)');
+            } catch (err) {
+                console.error('로그인 확인 실패:', err);
+                loginError('확인 중 오류가 발생했습니다. 네트워크/보안 규칙을 확인하세요. (' + (err && err.code ? err.code : 'unknown') + ')');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function doLogout() {
+            currentRole = 'viewer';
+            sessionPin = '';
+            clearSession();
+            applyRoleUI();
+            showToast('로그아웃되었습니다. 조회 전용 모드입니다.');
+        }
+
+        // 저장된 비밀번호가 있으면 서버 연결 확인 후 한 번만 자동 재확인
+        async function restoreSession() {
+            if (sessionRestored || !authActive) return;
+            sessionRestored = true;
+            let saved = null;
+            try {
+                saved = JSON.parse(localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY) || 'null');
+            } catch (e) { saved = null; }
+            if (!saved || !saved.pin) return;
+            try {
+                const role = await verifyPin(saved.pin);
+                if (role) {
+                    currentRole = role;
+                    sessionPin = saved.pin;
+                    afterRoleChange();
+                } else {
+                    clearSession();
+                    showToast('비밀번호가 변경되어 다시 로그인이 필요합니다.');
+                }
+            } catch (e) { console.error('세션 확인 실패(조회 전용으로 유지):', e); }
+        }
+
+        /* ---------- 시작 / Firebase ---------- */
         window.onload = function() {
+            rescueLocalLogs();   // 화면 처리 전에 이 기기의 기존 로컬 이력을 먼저 보존
             initCharts();
+            applyRoleUI();
             if (firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "") {
                 initFirebase();
             } else {
@@ -888,39 +1096,54 @@
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
                 useFirebase = true;
+                authActive = true;
+                applyRoleUI();
+                setCloudState(false, '클라우드 연결 확인 중 - 확인 전에는 클라우드에 저장하지 않습니다');
 
-                const indicator = document.getElementById('firebase-indicator');
-                if (indicator) indicator.classList.remove('hidden');
-
-                showToast("🔥 Firebase 클라우드 실시간 연동 모드로 실행되었습니다.");
+                // 연결 확인 전에는 이 기기의 로컬 데이터로 먼저 표시 (쓰기 없음)
+                loadDashboardsFromStorage();
+                renderDashboardList();
+                loadActiveDashboard();
 
                 db.collection("fire_dashboards").onSnapshot((snapshot) => {
-                    const fetchedDashboards = [];
+                    // 서버 확인 전의 캐시/빈 스냅샷으로는 아무 것도 하지 않음 (빈 DB로 오인해 덮어쓰는 사고 방지)
+                    if (snapshot.metadata.fromCache) {
+                        if (!cloudReady) return;
+                        cloudReady = false;
+                        setCloudState(false, '오프라인 - 연결 복구 전까지 클라우드에 저장하지 않습니다');
+                        return;
+                    }
+
+                    const fetched = [];
                     snapshot.forEach((doc) => {
-                        fetchedDashboards.push(doc.data());
+                        fetched.push(Object.assign({ id: doc.id }, doc.data()));
                     });
 
-                    if (fetchedDashboards.length > 0) {
-                        dashboards = fetchedDashboards;
-                        // 마스터 데이터 없으면 보충
-                        let master = dashboards.find(d => d.id === LATEST_DASHBOARD_DATA.id);
-                        if (!master) {
-                            dashboards.unshift(JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA)));
-                            saveDashboardsToStorage();
-                        }
-                        // 현재 선택된 대시보드가 목록에 있으면 그대로 유지! (강제 리셋 버그 제거)
-                        if (!dashboards.find(d => d.id === activeDashId)) {
-                            activeDashId = dashboards[0].id;
-                        }
-                    } else {
-                        dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
-                        activeDashId = LATEST_DASHBOARD_DATA.id;
-                        saveDashboardsToStorage();
+                    cloudReady = true;
+                    cloudBlocked = false;
+                    setCloudState(true, 'Firebase 클라우드 실시간 연동 중');
+
+                    // 마스터 문서가 서버에 '정말 없을 때만' 생성 (관리자만, 트랜잭션 안에서 재확인)
+                    if (!fetched.find(d => d.id === LATEST_DASHBOARD_DATA.id)) {
+                        fetched.unshift(deepCopy(LATEST_DASHBOARD_DATA));
+                        if (authActive ? currentRole === 'admin' : true) seedMasterIfAbsent();
                     }
+                    dashboards = fetched;
+                    if (!dashboards.find(d => d.id === activeDashId)) {
+                        activeDashId = dashboards[0].id;
+                    }
+                    saveDashboardsToStorage();   // 로컬 미러 (저장 전 rescue가 기존 로컬분을 먼저 보존)
                     renderDashboardList();
                     loadActiveDashboard();
+                    if (!sessionRestored) restoreSession();
+                    else if (currentRole === 'admin') { ensureDailyBackup(fetched); notifyLocalOnlyLogs(); }
                 }, (error) => {
                     console.error("Firebase Firestore 리스너 에러:", error);
+                    cloudReady = false;
+                    cloudBlocked = true;   // 이후 모든 클라우드 쓰기 차단 (로컬 데이터로 서버를 덮어쓰지 않음)
+                    const hint = error && error.code === 'permission-denied' ? ' (접근 권한 거부 - 보안 규칙 확인)' : '';
+                    setCloudState(false, '클라우드 연결 오류 - 이 기기에만 저장됩니다' + hint);
+                    showToast("⚠️ 클라우드 연결 오류" + hint + " - 클라우드 저장을 중단했습니다.");
                     loadDashboardsFromStorage();
                     renderDashboardList();
                     loadActiveDashboard();
@@ -928,6 +1151,8 @@
             } catch (err) {
                 console.error("Firebase 초기화 에러:", err);
                 useFirebase = false;
+                authActive = false;
+                applyRoleUI();
                 loadDashboardsFromStorage();
                 renderDashboardList();
                 loadActiveDashboard();
@@ -946,7 +1171,7 @@
                 } else {
                     dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
                 }
-            } catch(e) {  
+            } catch(e) {
                 console.error(e);
                 dashboards = [JSON.parse(JSON.stringify(LATEST_DASHBOARD_DATA))];
             }
@@ -956,19 +1181,344 @@
             saveDashboardsToStorage();
         }
 
+        // 로컬(localStorage) 저장 전용. 클라우드 쓰기는 아래 함수들만 수행
         function saveDashboardsToStorage() {
+            rescueLocalLogs();   // 덮어쓰기 전에 기존 로컬 이력을 먼저 보존
             try {
                 localStorage.setItem('fire_dashboards_v2', JSON.stringify(dashboards));
                 localStorage.setItem('fire_active_dash_v2', activeDashId);
             } catch(e) { console.error(e); }
+        }
 
-            if (useFirebase && db) {
-                const cur = getActiveDashboard();
-                if (cur) {
-                    db.collection("fire_dashboards").doc(cur.id).set(cur)
-                    .catch(err => console.error("Firebase 저장 실패:", err));
-                }
+        /* ---------- 클라우드 쓰기 (모든 쓰기에 비밀번호 티켓 포함) ---------- */
+        function backupRef(dashId, day) { return db.collection("fire_backups").doc(`${dashId}_${day}`); }
+        function backupDoc(kind, dashId, dashObj, day) {
+            return { kind, dashboardId: dashId, day, count: (dashObj.logs || []).length, savedAt: nowIso(), payload: JSON.stringify(dashObj) };
+        }
+
+        async function seedMasterIfAbsent() {
+            if (!cloudWritable() || !isAdmin()) return;
+            const ref = db.collection("fire_dashboards").doc(LATEST_DASHBOARD_DATA.id);
+            try {
+                await db.runTransaction(async (tx) => {
+                    const s = await tx.get(ref);
+                    if (!s.exists) {
+                        tx.set(ref, deepCopy(LATEST_DASHBOARD_DATA));
+                        stampTicket(tx);
+                    }
+                });
+            } catch (e) { console.error("마스터 생성 실패:", e); }
+        }
+
+        function applyLogOp(logs, op) {
+            const arr = (logs || []).slice();
+            const i = arr.findIndex(l => String(l.id) === String(op.id));
+            if (op.type === 'delete') {
+                if (i >= 0) arr.splice(i, 1);
+            } else if (i >= 0) {
+                arr[i] = op.log;
+            } else {
+                arr.unshift(op.log);
             }
+            return arr;
+        }
+
+        // 이력 1건 단위 저장: 화면/로컬 즉시 반영 → 클라우드는 최신 문서를 읽어 해당 id만 병합
+        async function commitLogOp(op) {
+            if (!requireEdit()) return;
+            if (op.type === 'delete' && !requireAdmin()) return;
+            const cur = getActiveDashboard();
+            detectorLogs = applyLogOp(detectorLogs, op);
+            cur.logs = detectorLogs;
+            cur.updatedAt = new Date().toLocaleString();
+            if (op.type === 'delete') rescueForget((k, v) => String(v.log && v.log.id) === String(op.id) && v.dashId === cur.id);
+            saveDashboardsToStorage();
+
+            if (!useFirebase || !db) return;
+            if (!cloudWritable()) {
+                showToast("⚠️ 클라우드에 연결되지 않아 이 기기에만 저장되었습니다. 연결 복구 후 '복구/백업'에서 병합하세요.");
+                return;
+            }
+            const ref = db.collection("fire_dashboards").doc(cur.id);
+            try {
+                await db.runTransaction(async (tx) => {
+                    const s = await tx.get(ref);
+                    let next;
+                    if (!s.exists) {
+                        next = deepCopy(cur.logs || []);
+                        tx.set(ref, deepCopy(Object.assign({}, cur, { logs: next })));
+                    } else {
+                        const remoteLogs = s.data().logs || [];
+                        next = deepCopy(applyLogOp(remoteLogs, op));
+                        if (next.length < remoteLogs.length - (op.type === 'delete' ? 1 : 0)) {
+                            throw new Error('이력 수 감소 감지 - 저장을 중단했습니다.');
+                        }
+                        tx.update(ref, { logs: next, updatedAt: cur.updatedAt });
+                        if (op.type === 'delete' && op.log) {
+                            tx.set(db.collection("fire_logs_trash").doc(cur.id + '_' + op.id + '_' + Date.now()), {
+                                dashboardId: cur.id, deletedAt: nowIso(), payload: JSON.stringify(op.log)
+                            });
+                        }
+                    }
+                    const day = ymd(new Date());
+                    tx.set(backupRef(cur.id, day), backupDoc('daily', cur.id, Object.assign({}, cur, { logs: next }), day));
+                    stampTicket(tx);
+                });
+            } catch (e) {
+                console.error("Firebase 저장 실패:", e);
+                const denied = e && e.code === 'permission-denied';
+                showToast(denied
+                    ? "⚠️ 저장 권한이 거부되었습니다. 비밀번호가 변경되었을 수 있으니 다시 로그인하세요. (이 기기에는 저장됨)"
+                    : "⚠️ 클라우드 저장 실패 - 이 기기에는 저장되었습니다. 잠시 후 다시 확인하세요.");
+            }
+        }
+
+        // 신규 대시보드: 문서가 없을 때만 생성, 있으면 메타정보만 갱신 (logs 불변)
+        async function cloudSaveDashboardMeta(dash) {
+            if (!isAdmin()) return;
+            if (!cloudWritable()) return;
+            const ref = db.collection("fire_dashboards").doc(dash.id);
+            const meta = { title: dash.title, period: dash.period, dept: dash.dept, target: dash.target, desc: dash.desc, updatedAt: dash.updatedAt };
+            try {
+                await db.runTransaction(async (tx) => {
+                    const s = await tx.get(ref);
+                    if (!s.exists) tx.set(ref, deepCopy(Object.assign({ id: dash.id }, meta, { logs: dash.logs || [] })));
+                    else tx.update(ref, meta);
+                    stampTicket(tx);
+                });
+            } catch (e) { console.error("대시보드 메타 저장 실패:", e); }
+        }
+
+        // 대시보드 삭제: 백업 + 삭제를 하나의 배치로 (둘 다 성공해야 삭제됨)
+        async function deleteDashboardCloud(curId, removed) {
+            if (!isAdmin() || !cloudWritable()) return false;
+            try {
+                const batch = db.batch();
+                batch.set(db.collection("fire_backups").doc(`${curId}_deleted_${Date.now()}`),
+                          backupDoc('dashboard-deleted', curId, removed || {}, ymd(new Date())));
+                batch.delete(db.collection("fire_dashboards").doc(curId));
+                stampTicket(batch);
+                await batch.commit();
+                return true;
+            } catch (e) {
+                console.error("Firebase 대시보드 삭제 실패:", e);
+                return false;
+            }
+        }
+
+        // 하루 첫 접속(관리자) 시 서버 데이터 기준 자동 백업 (이미 있으면 건드리지 않음 - 이전 날 백업은 보존)
+        async function ensureDailyBackup(list) {
+            if (!cloudWritable() || !isAdmin()) return;
+            const day = ymd(new Date());
+            if (backupDoneFor === day) return;
+            backupDoneFor = day;
+            for (const d of (list || [])) {
+                if (!d.logs || !d.logs.length) continue;
+                try {
+                    const ref = backupRef(d.id, day);
+                    const s = await ref.get();
+                    if (!s.exists) {
+                        const batch = db.batch();
+                        batch.set(ref, backupDoc('daily', d.id, d, day));
+                        stampTicket(batch);
+                        await batch.commit();
+                    }
+                } catch (e) { console.error("일일 백업 실패:", e); }
+            }
+        }
+
+        /* ---------- 누락 이력 복구 / 파일 불러오기 ---------- */
+        let recoveryCandidates = [];
+        let importedLogs = [];   // JSON 파일에서 불러온 이력 (복구 목록에 합산)
+
+        function logDupKey(l) { return `${l.date}|${l.address}|${String(l.desc || '').slice(0, 20)}`; }
+
+        // fire_logs(이관 문서) → 대시보드 이력 형식으로 변환 (필드가 없으면 빈 값, 미리보기에서 확인 후 병합)
+        function mapFireLogDoc(d) {
+            if (!d) return null;
+            let date = String(d.date || '');
+            const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(date);
+            if (m) {
+                if (m[1] !== '2026') return null;
+                date = `${parseInt(m[2], 10)}/${parseInt(m[3], 10)}`;
+            }
+            const loc = d.location || ((d.building && d.floor) ? `${d.building}/${d.floor}` : (d.building || ''));
+            const building = d.building || (loc ? loc.charAt(0).toUpperCase() : '');
+            const idNum = d.legacyId ? Number(d.legacyId) : (Date.parse(d.createdAt) || Date.now());
+            return {
+                id: idNum, date, type: d.type || d.category || '고장', location: loc, building,
+                address: d.address || '', detectorType: d.detectorType || '기 타',
+                assignee: d.assignee || d.createdBy || '', desc: d.desc || '', cause: d.cause || '기타',
+                status: d.status || '점검중'
+            };
+        }
+
+        function dateScore(l) {
+            const p = String(l.date || '').split('/');
+            return p.length >= 2 ? (parseInt(p[0], 10) * 100 + parseInt(p[1], 10)) : 0;
+        }
+
+        async function collectRecoveryCandidates() {
+            const cur = getActiveDashboard();
+            const haveIds = new Set(detectorLogs.map(l => String(l.id)));
+            const haveKeys = new Set(detectorLogs.map(logDupKey));
+            const haveDA = new Set(detectorLogs.map(l => `${l.date}|${l.address}`));
+            const maxScore = detectorLogs.reduce((m, l) => Math.max(m, dateScore(l)), 0);
+            const found = [], seen = new Set(), errors = [];
+
+            const push = (log, source, forceChecked) => {
+                if (!log || !log.date || !log.desc) return;
+                if (haveIds.has(String(log.id)) || haveKeys.has(logDupKey(log))) return;
+                const k = String(log.id) + '|' + logDupKey(log);
+                if (seen.has(k)) return;
+                seen.add(k);
+                const dup = haveDA.has(`${log.date}|${log.address}`);
+                found.push({ log, source, dup, checked: !dup && (forceChecked || dateScore(log) >= maxScore) });
+            };
+
+            importedLogs.forEach(l => push(l, '불러온 파일', true));
+
+            try {
+                const r = JSON.parse(localStorage.getItem('fire_local_rescue') || '{}');
+                Object.values(r).forEach(x => push(x.log, '이 기기 로컬 보관분'));
+            } catch (e) { errors.push('로컬 보관분 읽기 실패'); }
+
+            dashboards.forEach(d => {
+                if (d.id !== cur.id) (d.logs || []).forEach(l => push(l, `다른 대시보드: ${d.title}`));
+            });
+
+            if (cloudReadable()) {
+                try {
+                    const qs = await db.collection("fire_logs").get();
+                    qs.forEach(doc => {
+                        const d = doc.data();
+                        if (d.deleted === true) return;
+                        push(mapFireLogDoc(d), 'fire_logs 컬렉션');
+                    });
+                } catch (e) { errors.push('fire_logs 읽기 실패: ' + (e.code || e.message)); }
+                try {
+                    const qs = await db.collection("fire_backups").get();
+                    qs.forEach(doc => {
+                        try {
+                            const dash = JSON.parse(doc.data().payload);
+                            if (dash.id === cur.id) (dash.logs || []).forEach(l => push(l, `백업 ${doc.id}`));
+                        } catch (e) { /* skip */ }
+                    });
+                } catch (e) { errors.push('fire_backups 읽기 실패: ' + (e.code || e.message)); }
+            } else {
+                errors.push('클라우드 미연결 - 로컬/불러온 파일/다른 대시보드 범위만 조회했습니다.');
+            }
+
+            found.sort((a, b) => dateScore(b.log) - dateScore(a.log));
+            return { found, errors };
+        }
+
+        function notifyLocalOnlyLogs() {
+            if (localOnlyToastShown) return;
+            try {
+                const cur = getActiveDashboard();
+                const haveIds = new Set((cur.logs || []).map(l => String(l.id)));
+                const r = JSON.parse(localStorage.getItem('fire_local_rescue') || '{}');
+                const n = Object.values(r).filter(x => x.dashId === cur.id && !haveIds.has(String(x.log && x.log.id))).length;
+                if (n > 0) {
+                    localOnlyToastShown = true;
+                    showToast(`이 기기에만 있고 클라우드에 없는 이력 ${n}건 발견 - [복구/백업]에서 확인하세요.`);
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        async function refreshRecoveryList() {
+            const box = document.getElementById('recovery-list');
+            const status = document.getElementById('recovery-status');
+            box.innerHTML = '<p class="py-6 text-center text-slate-400">조회 중...</p>';
+            status.innerText = '';
+            const { found, errors } = await collectRecoveryCandidates();
+            recoveryCandidates = found;
+            renderRecoveryList();
+            status.innerText = errors.join(' / ');
+        }
+
+        async function openRecoveryModal() {
+            if (!requireAdmin()) return;
+            document.getElementById('recovery-modal').classList.remove('hidden');
+            await refreshRecoveryList();
+        }
+
+        function closeRecoveryModal() {
+            document.getElementById('recovery-modal').classList.add('hidden');
+        }
+
+        // 내보내기(JSON 전체 백업) 파일 또는 로컬 백업 파일에서 이력을 읽어 복구 목록에 추가
+        function handleRecoveryFile(input) {
+            const f = input.files && input.files[0];
+            if (!f) return;
+            const rd = new FileReader();
+            rd.onload = async () => {
+                try {
+                    const obj = JSON.parse(rd.result);
+                    const logs = [];
+                    const take = (arr) => (arr || []).forEach(l => { if (l && l.date && l.desc) logs.push(l); });
+                    if (Array.isArray(obj)) take(obj);
+                    if (obj && Array.isArray(obj.logs)) take(obj.logs);
+                    if (obj && Array.isArray(obj.dashboards)) obj.dashboards.forEach(d => take(d.logs));
+                    if (obj && obj.rescue) Object.values(obj.rescue).forEach(x => take([x.log]));
+                    importedLogs = logs;
+                    showToast(`파일에서 이력 ${logs.length}건을 읽었습니다. 목록에서 확인 후 병합하세요.`);
+                    await refreshRecoveryList();
+                } catch (e) {
+                    console.error(e);
+                    showToast('⚠️ 파일을 읽지 못했습니다. JSON 형식을 확인하세요.');
+                } finally { input.value = ''; }
+            };
+            rd.readAsText(f, 'utf-8');
+        }
+
+        function renderRecoveryList() {
+            const box = document.getElementById('recovery-list');
+            if (!recoveryCandidates.length) {
+                box.innerHTML = '<p class="py-6 text-center text-slate-400">현재 대시보드에 없는 이력이 발견되지 않았습니다.</p>';
+                return;
+            }
+            box.innerHTML = recoveryCandidates.map((c, i) => `
+                <label class="flex items-start gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer ${c.dup ? 'bg-slate-50' : 'bg-white'}">
+                    <input type="checkbox" ${c.checked ? 'checked' : ''} onchange="recoveryCandidates[${i}].checked = this.checked" style="margin-top:3px;flex:none">
+                    <span class="min-w-0">
+                        <b>${escHtml(c.log.date)}</b>
+                        <span class="text-slate-500">${escHtml(c.log.type)} · ${escHtml(c.log.location)} · ${escHtml(c.log.address)}</span><br>
+                        <span class="text-slate-700">${escHtml(c.log.desc)}</span><br>
+                        <span class="text-[10.5px] text-indigo-600">출처: ${escHtml(c.source)}${c.dup ? ' · 동일 일자·주소 존재(중복 의심, 기본 해제)' : ''}</span>
+                    </span>
+                </label>`).join('');
+        }
+
+        async function applyRecovery() {
+            if (!requireAdmin()) return;
+            const picked = recoveryCandidates.filter(c => c.checked);
+            if (!picked.length) { showToast('선택된 이력이 없습니다.'); return; }
+            const used = new Set(detectorLogs.map(l => String(l.id)));
+            let n = 0;
+            for (const c of picked) {
+                const log = Object.assign({}, c.log);
+                if (!log.id || used.has(String(log.id))) log.id = Date.now() + n;
+                used.add(String(log.id));
+                await commitLogOp({ type: 'upsert', id: log.id, log });
+                n++;
+            }
+            importedLogs = [];
+            closeRecoveryModal();
+            populatePeriodFilterOptions();
+            renderTable(); updateKPIs(); updateCharts();
+            showToast(`${n}건을 현재 대시보드에 병합했습니다.`);
+        }
+
+        function exportRescueJSON() {
+            const payload = {
+                exportedAt: nowIso(),
+                rescue: JSON.parse(localStorage.getItem('fire_local_rescue') || '{}'),
+                dashboards: JSON.parse(localStorage.getItem('fire_dashboards_v2') || '[]')
+            };
+            downloadFile(JSON.stringify(payload, null, 2), `fire_local_backup_${ymd(new Date())}.json`, 'application/json');
+            showToast('이 기기 로컬 데이터를 JSON으로 저장했습니다.');
         }
 
         // [버그 수정 완료]: 50건 미만 검증 강제 취소 로직 삭제 -> 0건 신규 대시보드도 정상 유지!
@@ -1028,6 +1578,7 @@
 
         // 대시보드 삭제 기능 (중복 누적 대시보드 정리)
         function askDeleteCurrentDashboard() {
+            if (!requireAdmin()) return;
             const cur = getActiveDashboard();
             if (cur.id === LATEST_DASHBOARD_DATA.id) {
                 showToast("⚠️️ 기본 마스터 대시보드는 삭제할 수 없습니다.");
@@ -1039,19 +1590,27 @@
 
         function closeDashDelModal(confirmed) {
             document.getElementById('dash-del-modal').classList.add('hidden');
-            if (confirmed) {
-                const curId = activeDashId;
+            if (!confirmed) return;
+            if (!requireAdmin()) return;
+            const curId = activeDashId;
+            const removed = dashboards.find(d => d.id === curId);
+            if (useFirebase && !cloudWritable()) {
+                showToast("⚠️ 클라우드에 연결되지 않아 대시보드를 삭제할 수 없습니다.");
+                return;
+            }
+            const finish = () => {
                 dashboards = dashboards.filter(d => d.id !== curId);
                 activeDashId = LATEST_DASHBOARD_DATA.id;
-                
-                if (useFirebase && db) {
-                    db.collection("fire_dashboards").doc(curId).delete()
-                    .catch(e => console.error("Firebase 대시보드 삭제 실패:", e));
-                }
+                rescueForget((k, v) => v.dashId === curId);
                 saveDashboardsToStorage();
                 renderDashboardList();
                 loadActiveDashboard();
-                showToast("선택한 대시보드가 삭제되었습니다.");
+                showToast("선택한 대시보드가 삭제되었습니다. (백업은 fire_backups에 보관)");
+            };
+            if (useFirebase) {
+                deleteDashboardCloud(curId, removed).then(ok => { if (ok) finish(); else showToast("⚠️ 클라우드 삭제에 실패했습니다."); });
+            } else {
+                finish();
             }
         }
 
@@ -1177,6 +1736,7 @@
         }
 
         function openPdfModal() {
+            if (!requireEdit()) return;
             saveCurrentDashboardState();
             const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
             let defaultFilename = "";
@@ -1220,6 +1780,7 @@
         }
 
         function executePdfPrint() {
+            if (!requireEdit()) return;
             const pdfInput = document.getElementById('pdf-filename-input');
             let customName = pdfInput ? pdfInput.value.trim() : '';
             if (!customName) customName = '소방시설_고장감시_보고서';
@@ -1503,12 +2064,12 @@
                         <td class="px-3 py-3 text-center whitespace-nowrap">
                             <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold ${statusColor} group-hover:ring-1 group-hover:ring-blue-400 transition">${item.status}</span>
                         </td>
-                        <td class="px-3 py-3 text-center no-print whitespace-nowrap sticky right-0 bg-white group-hover:bg-slate-50 transition border-l border-slate-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                        <td class="user-only px-3 py-3 text-center no-print whitespace-nowrap sticky right-0 bg-white group-hover:bg-slate-50 transition border-l border-slate-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
                             <div class="flex items-center justify-center gap-1.5">
-                                <button type="button" onclick="event.stopPropagation(); openEditModal(${item.id})" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white rounded-lg border border-blue-200 transition font-bold text-[11px] shadow-sm flex items-center gap-1" title="내역 수정하기">
+                                <button type="button" onclick="event.stopPropagation(); openEditModal(${item.id})" class="user-only px-2.5 py-1 bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white rounded-lg border border-blue-200 transition font-bold text-[11px] shadow-sm flex items-center gap-1" title="내역 수정하기">
                                     <i class="fa-solid fa-pen-to-square"></i> 수정
                                 </button>
-                                <button type="button" onclick="event.stopPropagation(); askDeleteRow(${item.id})" class="px-2 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg border border-rose-200 transition font-semibold text-[11px]" title="내역 삭제">
+                                <button type="button" onclick="event.stopPropagation(); askDeleteRow(${item.id})" class="admin-only px-2 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg border border-rose-200 transition font-semibold text-[11px]" title="내역 삭제">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -1520,6 +2081,7 @@
 
         function handleRowClick(event, id) {
             if (event.target.closest('button')) return;
+            if (!canEdit()) return;
             openEditModal(id);
         }
 
@@ -1624,6 +2186,7 @@
         }
 
         function openAddModal() {
+            if (!requireEdit()) return;
             document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-plus-circle text-emerald-400"></i> 신규 고장/감시 내역 등록`;
             document.getElementById('submit-btn-text').innerText = "저장하기";
             document.getElementById('form-edit-id').value = "";
@@ -1641,6 +2204,7 @@
         }
 
         function openEditModal(id) {
+            if (!requireEdit()) return;
             const item = detectorLogs.find(l => l.id === id);
             if (!item) return;
 
@@ -1683,44 +2247,22 @@
         }
 
         function applyPreset(type) {
-            const dateStr = `${new Date().getMonth() + 1}/${new Date().getDate()}`;
-            document.getElementById('form-date').value = dateStr;
-
-            if (type === '방풍실') {
-                document.getElementById('form-type').value = "고장";
-                document.getElementById('form-location').value = "B/B1F";
-                document.getElementById('form-address').value = "0414-1037";
-                document.getElementById('form-detector-type').value = "방화셔터 연기감지기";
-                document.getElementById('form-desc').value = "방풍실내 높은 습도영향으로 오동작 및 탈거";
-                document.getElementById('form-cause').value = "외부노출/방풍실";
-                document.getElementById('form-status-select').value = "감지기 탈거";
-            } else if (type === '램프') {
-                document.getElementById('form-type').value = "고장";
-                document.getElementById('form-location').value = "C/1F";
-                document.getElementById('form-address').value = "0428-3023";
-                document.getElementById('form-detector-type').value = "아날로그 감지기";
-                document.getElementById('form-desc').value = "C동 1층 침수 발전기실앞 주차장 램프 구간 연기감지기 고장 탈거";
-                document.getElementById('form-cause').value = "누수/침수";
-                document.getElementById('form-status-select').value = "감지기 탈거";
-            } else if (type === '결로') {
-                document.getElementById('form-type').value = "고장";
-                document.getElementById('form-location').value = "D/B1F";
-                document.getElementById('form-address').value = "0436-1033";
-                document.getElementById('form-detector-type').value = "아날로그 감지기";
-                document.getElementById('form-desc').value = "D동 지하1층 매장 주방내 정온식감지기 결로현상";
-                document.getElementById('form-cause').value = "결로현상";
-                document.getElementById('form-status-select').value = "감지기 탈거";
-            } else if (type === '그레이팅') {
-                document.getElementById('form-type').value = "비화재보";
-                document.getElementById('form-location').value = "C/B1F";
-                document.getElementById('form-address').value = "0436-2070";
-                document.getElementById('form-detector-type').value = "일반 연기감지기";
-                document.getElementById('form-desc').value = "보행통로 중간 스틸 그레이팅 상단 위 감지기 우천 습기 오동작";
-                document.getElementById('form-cause').value = "외부노출/방풍실";
-                document.getElementById('form-status-select').value = "점검완료";
-            }
+            const now = new Date();
+            const P = {
+                '방풍실':   { type: '고장',     det: '방화셔터 연기감지기', desc: '방풍실 내 습도 영향으로 감지기 오동작/탈거',            cause: '외부노출/방풍실', status: '감지기 탈거' },
+                '램프':     { type: '고장',     det: '아날로그 감지기',     desc: '주차장 램프 구간 누수/우천 유입으로 감지기 고장 탈거',  cause: '누수/침수',       status: '감지기 탈거' },
+                '결로':     { type: '고장',     det: '아날로그 감지기',     desc: '결로 현상으로 감지기 오동작/고장',                      cause: '결로현상',        status: '감지기 탈거' },
+                '그레이팅': { type: '비화재보', det: '일반 연기감지기',     desc: '스틸 그레이팅 구간 우천 습기로 감지기 오동작',          cause: '외부노출/방풍실', status: '점검완료' }
+            }[type];
+            if (!P) return;
+            document.getElementById('form-date').value = `${now.getMonth() + 1}/${now.getDate()}`;
+            document.getElementById('form-type').value = P.type;
+            document.getElementById('form-detector-type').value = P.det;
+            document.getElementById('form-desc').value = P.desc;
+            document.getElementById('form-cause').value = P.cause;
+            document.getElementById('form-status-select').value = P.status;
             syncStatusInput();
-            showToast(`'${type}' 예시 데이터가 적용되었습니다.`);
+            showToast(`'${type}' 템플릿이 적용되었습니다. 동/층과 Address는 직접 입력하세요.`);
         }
 
         function closeAddModal() {
@@ -1730,6 +2272,7 @@
 
         function handleFormSubmit(e) {
             e.preventDefault();
+            if (!requireEdit()) return;
             const editId = document.getElementById('form-edit-id').value;
 
             const date = document.getElementById('form-date').value;
@@ -1754,14 +2297,16 @@
                 else building = 'C';
             }
 
+            let op = null;
             if (editId) {
                 const index = detectorLogs.findIndex(l => l.id == editId);
                 if (index !== -1) {
-                    detectorLogs[index] = {
+                    const updated = {
                         ...detectorLogs[index],
                         date, type, location, building,
                         address, detectorType, assignee, desc, cause, status
                     };
+                    op = { type: 'upsert', id: updated.id, log: updated };
                     showToast("감지기 이력이 성공적으로 수정되었습니다.");
                 }
             } else {
@@ -1770,12 +2315,12 @@
                     date, type, location, building,
                     address, detectorType, assignee, desc, cause, status
                 };
-                detectorLogs.unshift(newItem);
+                op = { type: 'upsert', id: newItem.id, log: newItem };
                 showToast("신규 고장/감시 이력이 등록되었습니다.");
             }
 
             closeAddModal();
-            saveCurrentDashboardState();
+            if (op) commitLogOp(op);   // 화면/로컬 즉시 반영 + 클라우드는 id 단위 트랜잭션 병합
             populatePeriodFilterOptions();
             renderTable();
             updateKPIs();
@@ -1783,6 +2328,7 @@
         }
 
         function askDeleteRow(id) {
+            if (!requireAdmin()) return;
             deleteTargetId = id;
             document.getElementById('del-confirm-modal').classList.remove('hidden');
         }
@@ -1790,8 +2336,8 @@
         function closeDelConfirmModal(confirmed) {
             document.getElementById('del-confirm-modal').classList.add('hidden');
             if (confirmed && deleteTargetId) {
-                detectorLogs = detectorLogs.filter(l => l.id !== deleteTargetId);
-                saveCurrentDashboardState();
+                const target = detectorLogs.find(l => l.id === deleteTargetId);
+                if (target) commitLogOp({ type: 'delete', id: target.id, log: target });
                 populatePeriodFilterOptions();
                 renderTable();
                 updateKPIs();
@@ -1821,6 +2367,7 @@
         }
 
         function openNewDashModal() {
+            if (!requireAdmin()) return;
             document.getElementById('dash-form').reset();
             document.getElementById('dash-period').value = "2026.10.01 ~ 10.31";
             document.getElementById('dash-modal').classList.remove('hidden');
@@ -1851,6 +2398,7 @@
             selectedPeriodFilter = "ALL";
             
             saveDashboardsToStorage();
+            cloudSaveDashboardMeta(newDash);
             renderDashboardList();
             loadActiveDashboard();
             closeNewDashModal();
@@ -1858,6 +2406,7 @@
         }
 
         function exportDataCSV() {
+            if (!requireEdit()) return;
             saveCurrentDashboardState();
             const cur = getActiveDashboard();
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
@@ -1884,6 +2433,7 @@
         }
 
         function exportDataTXT() {
+            if (!requireEdit()) return;
             saveCurrentDashboardState();
             const cur = getActiveDashboard();
             const exportList = getScopedLogs();
@@ -1911,6 +2461,7 @@
         }
 
         function exportDataDOC() {
+            if (!requireEdit()) return;
             saveCurrentDashboardState();
             const cur = getActiveDashboard();
             const exportList = getScopedLogs();
@@ -1964,6 +2515,7 @@
         }
 
         function exportDataJSON() {
+            if (!requireAdmin()) return;
             saveCurrentDashboardState();
             const cur = getActiveDashboard();
             const jsonStr = JSON.stringify(cur, null, 2);
