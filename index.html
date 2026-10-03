@@ -588,16 +588,33 @@
                 <button type="button" onclick="closeAddModal()" class="text-slate-400 hover:text-white transition p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
-            <!-- Quick Presets -->
-            <div class="bg-slate-50 px-6 py-2.5 border-b border-slate-200 flex items-center gap-2 overflow-x-auto text-xs flex-shrink-0">
-                <span class="font-semibold text-slate-500 whitespace-nowrap"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>빠른 템플릿:</span>
-                <button type="button" onclick="applyPreset('방풍실')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🚪 방풍실 습기</button>
-                <button type="button" onclick="applyPreset('램프')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🚗 램프 누수</button>
-                <button type="button" onclick="applyPreset('결로')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">❄️ 냉장창고 결로</button>
-                <button type="button" onclick="applyPreset('그레이팅')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">🌧️ 스틸그레이팅 노출</button>
-                <button type="button" onclick="applyPreset('조작실수')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">👆 수동스위치 오조작</button>
-                <button type="button" onclick="applyPreset('조리증기')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 whitespace-nowrap shadow-sm font-medium">♨️ 조리·청소 증기</button>
-            </div>
+            <!-- Quick Presets - Grid Layout 빠른 템플릿 수정 -->
+    <div class="bg-slate-50 px-6 py-3 border-b border-slate-200 flex-shrink-0">
+    <div class="flex items-center gap-2 mb-3">
+        <i class="fa-solid fa-bolt text-amber-500"></i>
+        <span class="font-bold text-slate-700 text-xs">빠른 템플릿 선택</span>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <button type="button" onclick="applyPreset('방풍실')" class="px-3 py-2 bg-white hover:bg-blue-50 border border-slate-300 hover:border-blue-400 rounded-lg text-slate-700 text-xs font-semibold transition shadow-sm hover:shadow">
+            <i class="fa-solid fa-door-open text-blue-600 mr-1.5"></i>방풍실
+        </button>
+        <button type="button" onclick="applyPreset('램프')" class="px-3 py-2 bg-white hover:bg-blue-50 border border-slate-300 hover:border-blue-400 rounded-lg text-slate-700 text-xs font-semibold transition shadow-sm hover:shadow">
+            <i class="fa-solid fa-stairs text-indigo-600 mr-1.5"></i>램프
+        </button>
+        <button type="button" onclick="applyPreset('결로')" class="px-3 py-2 bg-white hover:bg-blue-50 border border-slate-300 hover:border-blue-400 rounded-lg text-slate-700 text-xs font-semibold transition shadow-sm hover:shadow">
+            <i class="fa-solid fa-droplet text-cyan-600 mr-1.5"></i>결로
+        </button>
+        <button type="button" onclick="applyPreset('그레이팅')" class="px-3 py-2 bg-white hover:bg-blue-50 border border-slate-300 hover:border-blue-400 rounded-lg text-slate-700 text-xs font-semibold transition shadow-sm hover:shadow">
+            <i class="fa-solid fa-grip text-slate-600 mr-1.5"></i>그레이팅
+        </button>
+        <button type="button" onclick="applyPreset('조작실수')" class="px-3 py-2 bg-white hover:bg-blue-50 border border-slate-300 hover:border-blue-400 rounded-lg text-slate-700 text-xs font-semibold transition shadow-sm hover:shadow">
+            <i class="fa-solid fa-hand-fist text-orange-600 mr-1.5"></i>조작실수
+        </button>
+        <button type="button" onclick="applyPreset('조리증기')" class="px-3 py-2 bg-white hover:bg-blue-50 border border-slate-300 hover:border-blue-400 rounded-lg text-slate-700 text-xs font-semibold transition shadow-sm hover:shadow">
+            <i class="fa-solid fa-fire text-rose-600 mr-1.5"></i>조리증기
+        </button>
+    </div>
+    </div>
 
             <form id="add-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-3.5 text-xs overflow-y-auto flex-1">
                 <input type="hidden" id="form-edit-id" value="">
